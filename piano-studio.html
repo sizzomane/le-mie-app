@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Piano studio">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F4F6FA">
+<link rel="apple-touch-icon" href="piano-studio-icon.png">
+<link rel="icon" href="piano-studio-icon.png">
+<title>Piano studio</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#F4F6FA;--ink:#1B2433;--mut:#566073;--line:#E3E7EF;--soft:#EBEEF4;--disp:'Bricolage Grotesque','DM Sans',system-ui,sans-serif}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,-apple-system,sans-serif;line-height:1.4}
+body.lock{overflow:hidden}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #6B8CFF;outline-offset:2px}
+.wrap{max-width:760px;margin:0 auto;padding:calc(24px + env(safe-area-inset-top)) 16px calc(100px + env(safe-area-inset-bottom))}
+h1,h2{font-family:var(--disp);margin:0;font-weight:700}
+h1{font-size:40px;line-height:1.05;letter-spacing:-.02em}
+h2{font-size:24px;line-height:1.15}
+p{margin:0}
+.head{display:flex;flex-direction:column;gap:6px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mut{color:var(--mut);font-size:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:20px;margin-top:16px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:20px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.stat .l{font-size:13px;font-weight:500;color:var(--mut)}
+.stat .v{font-family:var(--disp);font-size:34px;font-weight:700;line-height:1.15}
+.bar{height:12px;border-radius:999px;background:#DDE2EC;overflow:hidden;margin-top:14px}
+.bar>i{display:block;height:100%;border-radius:999px;background:var(--ink)}
+@media(min-width:640px){.stats{grid-template-columns:repeat(4,1fr)}h1{font-size:52px}}
+.bh{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.bh h2{overflow-wrap:anywhere}
+.bp{text-align:right;flex:none}
+.pct{font-family:var(--disp);font-size:34px;font-weight:700;line-height:1}
+.segs{display:flex;gap:3px;height:14px;margin:14px 0 8px}
+.segs i{flex-basis:0;flex-shrink:1;min-width:3px;border-radius:4px}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.ch{border-top:1px solid var(--soft);padding:14px 0;display:flex;flex-direction:column;gap:10px}
+.tag{font-size:12px;font-weight:700;letter-spacing:.1em}
+.ct{font-size:16px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;background:#fff;border:1.5px solid}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 16px;border-radius:12px;border:1.5px solid #C9D0DE;background:#fff;font-size:15px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.danger{color:#A62F4B;border-color:#E3B5BF}
+.btn.dashed{width:100%;margin-top:16px;border:2px dashed #B8C0D0;background:transparent;color:var(--mut)}
+.btn[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.empty{margin-top:16px;padding:24px;border:2px dashed #B8C0D0;border-radius:20px;color:var(--mut)}
+.tabs{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.97);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+.tab{flex:1;min-height:56px;background:none;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:700;color:var(--mut);cursor:pointer}
+.tab[aria-current=page]{color:var(--ink)}
+.ov{position:fixed;inset:0;background:rgba(27,36,51,.45);display:flex;align-items:flex-end;justify-content:center;z-index:10}
+.ov[hidden],.toast[hidden]{display:none}
+.sheet{background:#fff;width:100%;max-width:560px;max-height:90vh;overflow:auto;border-radius:20px 20px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom))}
+label.f,.f{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:700;margin-top:14px}
+input[type=text],textarea{width:100%;font-size:16px;font-weight:400;padding:12px;border:1.5px solid #C9D0DE;border-radius:12px;background:#fff}
+textarea{min-height:110px;resize:vertical}
+fieldset{border:0;margin:14px 0 0;padding:0}
+legend{font-size:14px;font-weight:700;padding:0;margin-bottom:8px}
+.sw{display:flex;gap:10px;flex-wrap:wrap}
+.swl{position:relative;width:44px;height:44px}
+.swl input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.swl span{display:block;width:44px;height:44px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1.5px #C9D0DE}
+.swl input:checked+span{box-shadow:0 0 0 3px var(--ink)}
+.swl input:focus-visible+span{outline:3px solid #6B8CFF;outline-offset:2px}
+.rd{display:flex;align-items:center;gap:10px;min-height:44px;font-size:15px}
+.rd input{width:22px;height:22px;margin:0}
+.err{background:#FDECEF;border:1px solid #F0B9C4;color:#7A1F33;border-radius:12px;padding:12px 14px;margin-top:14px;font-size:14px}
+.err ul{margin:6px 0 0;padding-left:18px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.prev{margin-top:16px;display:flex;flex-direction:column;gap:12px}
+.pb{border:1px solid var(--line);border-radius:14px;padding:14px}
+.pb ul{margin:8px 0 0;padding-left:18px;font-size:14px}
+.pbt{font-family:var(--disp);font-size:20px;font-weight:700}
+.note{font-size:14px;color:var(--mut)}
+pre{margin:12px 0 0;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom));background:var(--ink);color:#fff;padding:12px 18px;border-radius:999px;font-size:14px;z-index:20;max-width:90%;text-align:center}
+</style>
+</head>
+<body>
+<main class="wrap" id="app"></main>
+<nav class="tabs" aria-label="Sezioni">
+<button class="tab" data-act="tab" data-view="piano"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Piano</button>
+<button class="tab" data-act="tab" data-view="importa"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3h16v-3"/></svg>Importa</button>
+</nav>
+<div class="ov" id="ov" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"></div></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function () {
+'use strict';
+
+var KEY = 'pianoStudio.v1';
+var PALETTE = ['#2F5DA8', '#8A3F9E', '#1D7A62', '#B4541A', '#A62F4B', '#4F6B1E'];
+var CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>';
+
+// Dati iniziali, nello stesso formato dell'importazione. * = sessione fatta.
+var SEED = `# Affrontare la malattia | #2F5DA8
+Cap 1 | Aspetti psicologici e relazionali dell'esperienza di malattia | 15-30
+Cap 2 | La capacità di affrontare gli eventi stressanti da una prospettiva relazionale: il coping diadico | 31-43, 44-56
+Cap 3 | Il lavoro con la diade paziente-caregiver: considerazioni metodologiche ed etiche | 59-70, 71-83
+Cap 4 | L'impatto psicologico del Papillomavirus: quando la fiducia si ammala | 87-96, 97-106
+Cap 5 | Le risorse relazionali nella malattia gastrointestinale: uno studio cross-sectional | 107-133
+Cap 6 | Il ruolo del coping diadico nella transizione alla genitorialità: la nascita di un figlio pretermine | 135-160
+Cap 7 | La coppia di fronte alla malattia cardiaca: il ruolo della relazione nel processo di cura | 163-177
+Cap 8 | La nostra storia nell'intreccio delle storie di altri: l'esperienza di gruppo per coppie che affrontano il cancro al seno | 179-190, 191-202
+
+# Psicologia giuridica | #8A3F9E
+Cap 1 | Il minorenne vittima di reato | 3-17, 18-34, 35-51
+Cap 2 | La tutela del minorenne autore di reato | 53-65, 66-76
+Cap 3 | La tutela del minorenne: affido e adozione | 77-88, 89-104
+Cap 4 | La transizione separativa: conflitto, coparenting e interventi nell'interesse dei minori | 121-140, 141-160
+Cap 5 | La valutazione della famiglia e della coppia genitoriale nella separazione: la CTU a orientamento relazionale | 163-171, 172-187
+Cap 6 | Violenza di coppia e/o violenza di genere? | 201-215, 216-235
+Cap 7 | Danno alla persona e risarcimento del danno psichico: dall'inquadramento giuridico alla valutazione | 237-250, 251-261
+Cap 8 | La psicologia applicata negli istituti penitenziari | 263-281
+Cap 9 | Trattamenti in area penale per adulti e minori in situazioni di dipendenza | 283-295, 296-310, 311-331
+
+# Tra mente e corpo | #1D7A62
+Cap 2 | Un corpo che elabora: il pensiero di Wilma Bucci | 29-47*, 48-66*
+Cap 3 | Un corpo che comunica: il pensiero di Carla De Toffoli | 67-76*
+Cap 5 | Fattori di rischio, prevenzione delle patologie, promozione della salute | 105-122*
+Cap 6 | Cenni sul sistema immunitario e alcune patologie correlate | 123-140, 141-157
+Cap 8 | L'incontro con gli eventi | 183-198, 199-213, 214-228
+Cap 9 | Gli eventi sperimentali: interventi psicologici sperimentali nell'uomo con effetti sul sistema immunitario | 229-247
+Cap 10 | Il rapporto tra emozioni e salute nella ricerca empirica | 251-266
+Cap 11 | Alessitimia e regolazione affettiva | 267-284, 285-301, 302-318
+Cap 12 | Competenze emotive in età evolutiva: è possibile parlare di alessitimia? | 319-333, 334-347
+Cap 13 | Il modello della regolazione psicobiologica | 349-361, 362-374
+Cap 14 | Analisi cliniche di due patologie somatiche secondo il modello della regolazione psicobiologica | 375-384, 385-394
+Cap 15 | Relazioni interne e salute: studi empirici | 395-412
+Cap 16 | Relazioni esterne (adulte) e salute | 413-430`;
+
+var state = { books: [] };
+var ui = { view: 'piano', edit: false, collapsed: {}, importText: '', mode: 'add', preview: null };
+var sheetCtx = null;
+
+function $(id) { return document.getElementById(id); }
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function uid() { return 'x' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3); }
+function okColor(c) { return typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c); }
+function clean(s) { return String(s).replace(/\|/g, '/').replace(/\s+/g, ' ').trim(); }
+function byId(list, id) { for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i]; return null; }
+function nextColor() {
+  var used = state.books.map(function (b) { return b.color.toLowerCase(); });
+  for (var i = 0; i < PALETTE.length; i++) if (used.indexOf(PALETTE[i].toLowerCase()) < 0) return PALETTE[i];
+  return PALETTE[state.books.length % PALETTE.length];
+}
+
+/* ---------- parsing ---------- */
+
+function splitRange(r, n) {
+  var pages = r.to - r.from + 1;
+  var k = Math.max(1, Math.round(pages / n));
+  var base = Math.floor(pages / k), extra = pages % k, start = r.from, out = [];
+  for (var i = 0; i < k; i++) {
+    var size = base + (i < extra ? 1 : 0);
+    out.push({ from: start, to: start + size - 1, done: r.done });
+    start += size;
+  }
+  return out;
+}
+
+// "31-43, 44-56*" oppure "57-102 /15". Restituisce null e riempie errs se non valido.
+function parseSessions(field, errs) {
+  var s = String(field).trim(), auto = null;
+  var m = s.match(/\/\s*(\d+)\s*$/);
+  if (m) { auto = parseInt(m[1], 10); s = s.slice(0, m.index).trim(); }
+  var toks = s.split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+  if (!toks.length) { errs.push('Mancano le pagine.'); return null; }
+  var out = [];
+  for (var i = 0; i < toks.length; i++) {
+    var mm = toks[i].match(/^(\d+)\s*(?:-\s*(\d+))?\s*(\*)?$/);
+    if (!mm) { errs.push('Pagine non valide: "' + toks[i] + '". Usa per esempio 15-30.'); return null; }
+    var from = parseInt(mm[1], 10), to = mm[2] ? parseInt(mm[2], 10) : from;
+    if (to < from) { errs.push('Intervallo al contrario: "' + toks[i] + '".'); return null; }
+    out.push({ from: from, to: to, done: !!mm[3] });
+  }
+  if (auto) {
+    if (auto < 1) { errs.push('Il numero dopo / deve essere almeno 1.'); return null; }
+    if (out.length !== 1) { errs.push('"/' + auto + '" si usa con un solo intervallo di pagine.'); return null; }
+    out = splitRange(out[0], auto);
+  }
+  return out;
+}
+
+function parseText(text) {
+  var books = [], errors = [], cur = null;
+  String(text).split(/\r?\n/).forEach(function (raw, i) {
+    var line = raw.trim();
+    if (!line || line.indexOf('//') === 0) return;
+    var ln = 'Riga ' + (i + 1) + ': ';
+    if (line.charAt(0) === '#') {
+      var p = line.slice(1).split('|');
+      var name = clean(p[0]);
+      var col = (p[1] || '').trim();
+      if (!name) { errors.push(ln + 'libro senza nome.'); cur = null; return; }
+      if (col && !okColor(col)) { errors.push(ln + 'colore non valido (' + col + '), uso uno automatico.'); col = ''; }
+      cur = { name: name, color: col, chapters: [] };
+      books.push(cur);
+      return;
+    }
+    if (!cur) { errors.push(ln + 'capitolo prima del libro. Serve prima una riga che inizia con #.'); return; }
+    var f = line.split('|');
+    if (f.length < 3) { errors.push(ln + 'servono 3 campi separati da |: capitolo | titolo | pagine.'); return; }
+    var nm = f[0].match(/\d+/);
+    if (!nm) { errors.push(ln + 'manca il numero del capitolo.'); return; }
+    var title = clean(f.slice(1, -1).join('/'));
+    if (!title) { errors.push(ln + 'manca il titolo.'); return; }
+    var e2 = [];
+    var ss = parseSessions(f[f.length - 1], e2);
+    if (!ss) { errors.push(ln + e2[0]); return; }
+    cur.chapters.push({ n: parseInt(nm[0], 10), title: title, sessions: ss });
+  });
+  books = books.filter(function (b) {
+    if (!b.chapters.length) { errors.push('Il libro "' + b.name + '" non ha capitoli.'); return false; }
+    return true;
+  });
+  return { books: books, errors: errors };
+}
+
+function findBookByName(name) {
+  var k = name.toLowerCase();
+  for (var i = 0; i < state.books.length; i++) if (state.books[i].name.toLowerCase() === k) return state.books[i];
+  return null;
+}
+
+function applyParsed(parsed, mode) {
+  if (mode === 'replace') state.books = [];
+  parsed.books.forEach(function (pb) {
+    var book = findBookByName(pb.name);
+    if (!book) {
+      book = { id: uid(), name: pb.name, color: pb.color || nextColor(), chapters: [] };
+      state.books.push(book);
+    } else if (pb.color) {
+      book.color = pb.color;
+    }
+    pb.chapters.forEach(function (pc) {
+      var sessions = pc.sessions.map(function (s) { return { from: s.from, to: s.to, done: s.done }; });
+      var ex = null;
+      book.chapters.forEach(function (c) { if (c.n === pc.n) ex = c; });
+      if (ex) {
+        sessions.forEach(function (s) {
+          if (!s.done) ex.sessions.forEach(function (o) { if (o.done && o.from === s.from && o.to === s.to) s.done = true; });
+        });
+        ex.title = pc.title;
+        ex.sessions = sessions;
+      } else {
+        book.chapters.push({ id: uid(), n: pc.n, title: pc.title, sessions: sessions });
+      }
+    });
+    book.chapters.sort(function (a, b) { return a.n - b.n; });
+  });
+}
+
+function toText() {
+  return state.books.map(function (b) {
+    return '# ' + b.name + ' | ' + b.color + '\n' + b.chapters.map(function (c) {
+      return 'Cap ' + c.n + ' | ' + c.title + ' | ' + c.sessions.map(function (s) {
+        return s.from + '-' + s.to + (s.done ? '*' : '');
+      }).join(', ');
+    }).join('\n');
+  }).join('\n\n');
+}
+
+/* ---------- salvataggio ---------- */
+
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); }
+  catch (e) { toast('Salvataggio non riuscito. Fai un backup da Importa.'); }
+}
+
+function sanitize(o) {
+  var out = { books: [] };
+  o.books.forEach(function (b, bi) {
+    if (!b || typeof b.name !== 'string') return;
+    var nb = { id: String(b.id || uid()), name: b.name, color: okColor(b.color) ? b.color : PALETTE[bi % PALETTE.length], chapters: [] };
+    (Array.isArray(b.chapters) ? b.chapters : []).forEach(function (c) {
+      if (!c || typeof c.title !== 'string') return;
+      var ss = [];
+      (Array.isArray(c.sessions) ? c.sessions : []).forEach(function (s) {
+        var f = Number(s && s.from), t = Number(s && s.to);
+        if (isFinite(f) && isFinite(t) && t >= f) ss.push({ from: f, to: t, done: !!s.done });
+      });
+      if (!ss.length) return;
+      nb.chapters.push({ id: String(c.id || uid()), n: Number(c.n) || 0, title: c.title, sessions: ss });
+    });
+    out.books.push(nb);
+  });
+  return out;
+}
+
+function load() {
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) {
+      var o = JSON.parse(raw);
+      if (o && Array.isArray(o.books)) return sanitize(o);
+    }
+  } catch (e) { /* si riparte dai dati iniziali */ }
+  return null;
+}
+
+/* ---------- statistiche ---------- */
+
+function bookStats(b) {
+  var n = 0, d = 0, p = 0;
+  b.chapters.forEach(function (c) {
+    c.sessions.forEach(function (s) { n++; p += s.to - s.from + 1; if (s.done) d++; });
+  });
+  return { n: n, d: d, p: p, pct: n ? Math.round(d / n * 100) : 0 };
+}
+
+function totals() {
+  var n = 0, d = 0;
+  state.books.forEach(function (b) { var s = bookStats(b); n += s.n; d += s.d; });
+  return { n: n, d: d, todo: n - d, pct: n ? Math.round(d / n * 100) : 0 };
+}
+
+/* ---------- viste ---------- */
+
+function bookCard(b) {
+  var st = bookStats(b), col = b.color, open = !ui.collapsed[b.id], bid = esc(b.id);
+  var h = '<section class="card">';
+  h += '<div class="bh"><div><h2 style="color:' + col + '">' + esc(b.name) + '</h2><div class="mut">' + st.n + ' sessioni · ' + st.p + ' pagine</div></div>';
+  h += '<div class="bp"><div class="pct" style="color:' + col + '">' + st.pct + '%</div><div class="mut">' + st.d + ' di ' + st.n + ' fatte</div></div></div>';
+  h += '<div class="segs" aria-hidden="true">';
+  b.chapters.forEach(function (c) {
+    c.sessions.forEach(function (s) {
+      h += '<i style="flex-grow:' + (s.to - s.from + 1) + ';background:' + (s.done ? col : col + '30') + '"></i>';
+    });
+  });
+  h += '</div>';
+  h += '<div class="tools"><button class="btn" data-act="collapse" data-b="' + bid + '" aria-expanded="' + open + '">' + (open ? 'Nascondi capitoli' : 'Mostra capitoli') + '</button>';
+  if (ui.edit) {
+    h += '<button class="btn" data-act="editBook" data-b="' + bid + '">Libro</button>';
+    h += '<button class="btn" data-act="addCh" data-b="' + bid + '">+ Capitolo</button>';
+  }
+  h += '</div>';
+  if (open) {
+    var idx = 0;
+    h += '<div style="margin-top:12px">';
+    b.chapters.forEach(function (c) {
+      h += '<div class="ch"><div><div class="tag" style="color:' + col + '">CAP. ' + c.n + '</div><div class="ct">' + esc(c.title) + '</div></div><div class="chips">';
+      c.sessions.forEach(function (s, i) {
+        idx++;
+        var style = s.done
+          ? 'background:' + col + ';color:#fff;border-color:' + col
+          : 'background:#fff;color:' + col + ';border-color:' + col + '80';
+        h += '<button class="chip" style="' + style + '" data-act="toggle" data-b="' + bid + '" data-c="' + esc(c.id) + '" data-i="' + i + '" aria-pressed="' + (s.done ? 'true' : 'false') + '">' +
+          (s.done ? CHECK : '') + 'S' + idx + ' · pp. ' + s.from + '-' + s.to + '</button>';
+      });
+      h += '</div>';
+      if (ui.edit) h += '<div class="tools" style="margin:0"><button class="btn" data-act="editCh" data-b="' + bid + '" data-c="' + esc(c.id) + '">Modifica capitolo</button></div>';
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+  h += '</section>';
+  return h;
+}
+
+function viewPiano() {
+  var T = totals();
+  var h = '<header class="head"><div class="eyebrow">Scadenza 8 dicembre 2026</div><div class="row"><h1>Piano studio</h1>' +
+    '<button class="btn" data-act="edit" aria-pressed="' + (ui.edit ? 'true' : 'false') + '">' + (ui.edit ? 'Fine' : 'Modifica') + '</button></div></header>';
+  h += '<div class="stats">' +
+    '<div class="stat"><div class="l">Sessioni totali</div><div class="v">' + T.n + '</div></div>' +
+    '<div class="stat"><div class="l">Fatte</div><div class="v">' + T.d + '</div></div>' +
+    '<div class="stat"><div class="l">Da fare</div><div class="v">' + T.todo + '</div></div>' +
+    '<div class="stat"><div class="l">Completato</div><div class="v">' + T.pct + '%</div></div></div>';
+  h += '<div class="bar" role="progressbar" aria-label="Completamento totale" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + T.pct + '"><i style="width:' + T.pct + '%"></i></div>';
+  state.books.forEach(function (b) { h += bookCard(b); });
+  if (!state.books.length) {
+    h += '<div class="empty">Nessun libro. Vai su Importa per caricare il testo che ti preparo, oppure premi Modifica e aggiungi un libro a mano.</div>';
+  }
+  if (ui.edit) h += '<button class="btn dashed" data-act="addBook">+ Nuovo libro</button>';
+  return h;
+}
+
+function previewHtml(p) {
+  if (!p) return '';
+  var h = '<div class="prev">';
+  if (p.errors.length) {
+    h += '<div class="err" role="alert"><strong>Da correggere:</strong><ul>' + p.errors.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul></div>';
+  }
+  p.books.forEach(function (b) {
+    var n = 0, pg = 0;
+    b.chapters.forEach(function (c) { c.sessions.forEach(function (s) { n++; pg += s.to - s.from + 1; }); });
+    var exists = ui.mode === 'add' && findBookByName(b.name);
+    h += '<div class="pb"><div class="pbt" style="color:' + (b.color || '#1B2433') + '">' + esc(b.name) + '</div>' +
+      '<div class="mut">' + b.chapters.length + ' capitoli · ' + n + ' sessioni · ' + pg + ' pagine' + (exists ? ' · libro già presente: aggiorno i capitoli con lo stesso numero' : '') + '</div><ul>';
+    b.chapters.forEach(function (c) {
+      h += '<li>Cap ' + c.n + ': ' + esc(c.title) + ' (' + c.sessions.map(function (s) { return s.from + '-' + s.to + (s.done ? '*' : ''); }).join(', ') + ')</li>';
+    });
+    h += '</ul></div>';
+  });
+  if (ui.mode === 'replace' && state.books.length) {
+    h += '<div class="err">Sostituisci tutto: i ' + state.books.length + ' libri attuali e i loro progressi verranno eliminati. Fai prima un backup.</div>';
+  }
+  if (!p.errors.length && p.books.length) {
+    h += '<div class="actions" style="margin-top:0"><button class="btn primary" data-act="confirmImport">Importa ' + p.books.length + (p.books.length === 1 ? ' libro' : ' libri') + '</button></div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function viewImport() {
+  var h = '<header class="head"><div class="eyebrow">Importa e backup</div><h1>Importa</h1></header>';
+  h += '<section class="card"><h2>Da testo</h2><p class="mut" style="margin-top:6px">Incolla il testo che ti ho preparato, oppure carica il file .txt. Prima di salvare vedi un riepilogo da controllare.</p>';
+  h += '<div class="actions"><label class="btn" for="file">Carica file .txt</label><input type="file" id="file" accept=".txt,text/plain" hidden></div>';
+  h += '<label class="f" for="imp">Testo da importare</label><textarea id="imp" rows="9" spellcheck="false" autocapitalize="off" autocorrect="off" placeholder="# Nome libro | #2F5DA8&#10;Cap 1 | Titolo | 15-30">' + esc(ui.importText) + '</textarea>';
+  h += '<fieldset><legend>Libri già presenti</legend>' +
+    '<label class="rd"><input type="radio" name="mode" value="add"' + (ui.mode === 'add' ? ' checked' : '') + '> Aggiungi o aggiorna: i progressi segnati restano</label>' +
+    '<label class="rd"><input type="radio" name="mode" value="replace"' + (ui.mode === 'replace' ? ' checked' : '') + '> Sostituisci tutto</label></fieldset>';
+  h += '<div class="actions"><button class="btn primary" data-act="check">Controlla</button></div><div id="prev">' + previewHtml(ui.preview) + '</div></section>';
+
+  h += '<section class="card"><h2>Backup</h2><p class="mut" style="margin-top:6px">I dati restano su questo telefono. Safari e l\'app sulla schermata Home hanno memorie separate, e cancellare i dati del sito li elimina. Copia o scarica il backup ogni tanto: si reimporta qui sopra con Sostituisci tutto.</p>';
+  h += '<label class="f" for="exp">Backup attuale</label><textarea id="exp" rows="6" readonly spellcheck="false">' + esc(toText()) + '</textarea>';
+  h += '<div class="actions"><button class="btn" data-act="copy">Copia</button><button class="btn" data-act="download">Scarica .txt</button></div></section>';
+
+  h += '<section class="card"><h2>Formato</h2><p class="mut" style="margin-top:6px">Una riga con # per ogni libro (il colore è facoltativo). Una riga per capitolo: numero | titolo | pagine. Più intervalli separati da virgola sono più sessioni. Un solo intervallo seguito da /15 si divide in sessioni da circa 15 pagine. Un * dopo l\'intervallo segna la sessione come fatta.</p>' +
+    '<pre>' + esc('# Nome libro | #2F5DA8\nCap 1 | Titolo del capitolo | 15-30\nCap 2 | Titolo | 31-43, 44-56*\nCap 3 | Titolo | 57-102 /15') + '</pre></section>';
+  return h;
+}
+
+function render(keepScroll) {
+  var y = window.scrollY;
+  $('app').innerHTML = ui.view === 'piano' ? viewPiano() : viewImport();
+  var tabs = document.querySelectorAll('.tab');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].setAttribute('aria-current', tabs[i].getAttribute('data-view') === ui.view ? 'page' : 'false');
+  }
+  window.scrollTo(0, keepScroll === false ? 0 : y);
+}
+
+/* ---------- finestre di modifica ---------- */
+
+function openSheet(title, fields, opts) {
+  sheetCtx = opts;
+  $('sheet').innerHTML = '<h2 id="sheetTitle">' + esc(title) + '</h2><form id="sf" novalidate>' + fields +
+    '<div class="err" id="sferr" role="alert" hidden></div><div class="actions">' +
+    '<button type="submit" class="btn primary">Salva</button>' +
+    '<button type="button" class="btn" data-act="sheetClose">Annulla</button>' +
+    (opts.del ? '<button type="button" class="btn danger" data-act="sheetDel">' + esc(opts.delLabel) + '</button>' : '') +
+    '</div></form>';
+  $('ov').hidden = false;
+  document.body.classList.add('lock');
+}
+
+function closeSheet() {
+  $('ov').hidden = true;
+  document.body.classList.remove('lock');
+  sheetCtx = null;
+}
+
+function bookSheet(book) {
+  var colors = PALETTE.slice();
+  var cur = book ? book.color : nextColor();
+  if (colors.map(function (c) { return c.toLowerCase(); }).indexOf(cur.toLowerCase()) < 0) colors.push(cur);
+  var f = '<label class="f" for="bname">Nome del libro</label><input type="text" id="bname" name="name" maxlength="80" autocomplete="off" value="' + esc(book ? book.name : '') + '">';
+  f += '<fieldset><legend>Colore</legend><div class="sw">' + colors.map(function (c) {
+    return '<label class="swl"><input type="radio" name="color" value="' + c + '" aria-label="Colore ' + c + '"' + (c.toLowerCase() === cur.toLowerCase() ? ' checked' : '') + '><span style="background:' + c + '"></span></label>';
+  }).join('') + '</div></fieldset>';
+  openSheet(book ? 'Modifica libro' : 'Nuovo libro', f, {
+    del: !!book,
+    delLabel: 'Elimina libro',
+    submit: function (form) {
+      var name = clean(form.elements.name.value);
+      if (!name) return 'Inserisci il nome del libro.';
+      var other = findBookByName(name);
+      if (other && other !== book) return 'Esiste già un libro con questo nome.';
+      var col = form.elements.color.value;
+      if (!okColor(col)) col = cur;
+      if (book) { book.name = name; book.color = col; }
+      else state.books.push({ id: uid(), name: name, color: col, chapters: [] });
+      save();
+      return null;
+    },
+    onDelete: function () {
+      if (!window.confirm('Eliminare "' + book.name + '" con tutti i suoi capitoli e progressi?')) return false;
+      state.books = state.books.filter(function (b) { return b !== book; });
+      save();
+      return true;
+    }
+  });
+}
+
+function chSheet(book, ch) {
+  var sess = ch ? ch.sessions.map(function (s) { return s.from + '-' + s.to + (s.done ? '*' : ''); }).join(', ') : '';
+  var f = '<label class="f" for="cn">Numero del capitolo</label><input type="text" id="cn" name="n" inputmode="numeric" autocomplete="off" value="' + (ch ? ch.n : '') + '">';
+  f += '<label class="f" for="ct">Titolo</label><input type="text" id="ct" name="title" maxlength="200" autocomplete="off" value="' + esc(ch ? ch.title : '') + '">';
+  f += '<label class="f" for="cs">Sessioni (pagine)</label><textarea id="cs" name="sess" rows="3" spellcheck="false" autocapitalize="off" autocorrect="off">' + esc(sess) + '</textarea>';
+  f += '<p class="note" style="margin-top:6px">Esempi: 15-30 (una sessione), 31-43, 44-56 (due sessioni), 57-102 /15 (sessioni da circa 15 pagine). Un * dopo l\'intervallo lo segna come fatto.</p>';
+  openSheet(ch ? 'Modifica capitolo' : 'Nuovo capitolo', f, {
+    del: !!ch,
+    delLabel: 'Elimina capitolo',
+    submit: function (form) {
+      var nStr = form.elements.n.value.trim();
+      if (!/^\d+$/.test(nStr)) return 'Inserisci il numero del capitolo.';
+      var n = parseInt(nStr, 10);
+      var title = clean(form.elements.title.value);
+      if (!title) return 'Inserisci il titolo.';
+      var errs = [];
+      var ss = parseSessions(form.elements.sess.value, errs);
+      if (!ss) return errs[0];
+      var dup = book.chapters.some(function (c) { return c.n === n && c !== ch; });
+      if (dup) return 'Esiste già il capitolo ' + n + ' in questo libro.';
+      if (ch) { ch.n = n; ch.title = title; ch.sessions = ss; }
+      else book.chapters.push({ id: uid(), n: n, title: title, sessions: ss });
+      book.chapters.sort(function (a, b) { return a.n - b.n; });
+      save();
+      return null;
+    },
+    onDelete: function () {
+      if (!window.confirm('Eliminare il capitolo ' + ch.n + '?')) return false;
+      book.chapters = book.chapters.filter(function (c) { return c !== ch; });
+      save();
+      return true;
+    }
+  });
+}
+
+/* ---------- varie ---------- */
+
+var toastTimer;
+function toast(m) {
+  var e = $('toast');
+  e.textContent = m;
+  e.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { e.hidden = true; }, 2600);
+}
+
+function copyBackup() {
+  var ta = $('exp');
+  function fallback() {
+    ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    toast(ok ? 'Copiato' : 'Testo selezionato: copialo a mano');
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(toText()).then(function () { toast('Copiato'); }, fallback);
+  } else fallback();
+}
+
+function downloadBackup() {
+  var blob = new Blob([toText()], { type: 'text/plain' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'piano-studio-backup.txt';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+/* ---------- eventi ---------- */
+
+document.addEventListener('click', function (ev) {
+  if (ev.target.id === 'ov') { closeSheet(); return; }
+  var t = ev.target.closest('[data-act]');
+  if (!t) return;
+  var act = t.getAttribute('data-act');
+  var b = t.getAttribute('data-b') ? byId(state.books, t.getAttribute('data-b')) : null;
+  var c = b && t.getAttribute('data-c') ? byId(b.chapters, t.getAttribute('data-c')) : null;
+  switch (act) {
+    case 'tab': ui.view = t.getAttribute('data-view'); render(false); break;
+    case 'edit': ui.edit = !ui.edit; render(); break;
+    case 'toggle':
+      var s = c && c.sessions[parseInt(t.getAttribute('data-i'), 10)];
+      if (s) { s.done = !s.done; save(); render(); }
+      break;
+    case 'collapse': if (b) { ui.collapsed[b.id] = !ui.collapsed[b.id]; render(); } break;
+    case 'addBook': bookSheet(null); break;
+    case 'editBook': if (b) bookSheet(b); break;
+    case 'addCh': if (b) chSheet(b, null); break;
+    case 'editCh': if (b && c) chSheet(b, c); break;
+    case 'sheetClose': closeSheet(); break;
+    case 'sheetDel':
+      if (sheetCtx && sheetCtx.onDelete && sheetCtx.onDelete()) { closeSheet(); render(); }
+      break;
+    case 'check':
+      ui.importText = $('imp').value;
+      ui.preview = ui.importText.trim()
+        ? parseText(ui.importText)
+        : { books: [], errors: ['Il testo è vuoto.'] };
+      $('prev').innerHTML = previewHtml(ui.preview);
+      break;
+    case 'confirmImport':
+      if (ui.preview && ui.preview.books.length && !ui.preview.errors.length) {
+        if (ui.mode === 'replace' && state.books.length && !window.confirm('Sostituire tutti i libri e i progressi attuali?')) return;
+        var n = ui.preview.books.length;
+        applyParsed(ui.preview, ui.mode);
+        save();
+        ui.preview = null; ui.importText = ''; ui.view = 'piano';
+        render(false);
+        toast(n === 1 ? 'Libro importato' : n + ' libri importati');
+      }
+      break;
+    case 'copy': copyBackup(); break;
+    case 'download': downloadBackup(); break;
+  }
+});
+
+document.addEventListener('submit', function (ev) {
+  if (ev.target.id !== 'sf') return;
+  ev.preventDefault();
+  if (!sheetCtx) return;
+  var err = sheetCtx.submit(ev.target);
+  if (err) {
+    var box = $('sferr');
+    box.textContent = err;
+    box.hidden = false;
+    return;
+  }
+  closeSheet();
+  render();
+});
+
+document.addEventListener('input', function (ev) {
+  if (ev.target.id === 'imp') {
+    ui.importText = ev.target.value;
+    ui.preview = null;
+    var p = $('prev'); if (p) p.innerHTML = '';
+  }
+});
+
+document.addEventListener('change', function (ev) {
+  var t = ev.target;
+  if (t.name === 'mode' && t.type === 'radio') {
+    ui.mode = t.value;
+    var p = $('prev'); if (p) p.innerHTML = previewHtml(ui.preview);
+  } else if (t.id === 'file' && t.files && t.files[0]) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      ui.importText = String(reader.result || '');
+      ui.preview = null;
+      render();
+    };
+    reader.readAsText(t.files[0]);
+  }
+});
+
+document.addEventListener('keydown', function (ev) {
+  if (ev.key === 'Escape' && !$('ov').hidden) closeSheet();
+});
+
+/* ---------- avvio ---------- */
+
+var loaded = load();
+if (loaded) state = loaded;
+else { applyParsed(parseText(SEED), 'replace'); save(); }
+render();
+
+})();
+</script>
+</body>
+</html>
