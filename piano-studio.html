@@ -62,8 +62,10 @@ p{margin:0}
 .ov[hidden],.toast[hidden]{display:none}
 .sheet{background:#fff;width:100%;max-width:560px;max-height:90vh;overflow:auto;border-radius:20px 20px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom))}
 label.f,.f{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:700;margin-top:14px}
-input[type=text],textarea{width:100%;font-size:16px;font-weight:400;padding:12px;border:1.5px solid #C9D0DE;border-radius:12px;background:#fff}
+input[type=text],input[type=date],textarea{width:100%;font-size:16px;font-weight:400;padding:12px;border:1.5px solid #C9D0DE;border-radius:12px;background:#fff}
 textarea{min-height:110px;resize:vertical}
+input[type=date]{min-height:48px;-webkit-appearance:none;appearance:none}
+.dl{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0;background:none;border:0;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);cursor:pointer;text-align:left}
 fieldset{border:0;margin:14px 0 0;padding:0}
 legend{font-size:14px;font-weight:700;padding:0;margin-bottom:8px}
 .sw{display:flex;gap:10px;flex-wrap:wrap}
@@ -104,7 +106,9 @@ var PALETTE = ['#2F5DA8', '#8A3F9E', '#1D7A62', '#B4541A', '#A62F4B', '#4F6B1E']
 var CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>';
 
 // Dati iniziali, nello stesso formato dell'importazione. * = sessione fatta.
-var SEED = `# Affrontare la malattia | #2F5DA8
+var SEED = `@scadenza | 2026-12-08
+
+# Affrontare la malattia | #2F5DA8
 Cap 1 | Aspetti psicologici e relazionali dell'esperienza di malattia | 15-30
 Cap 2 | La capacità di affrontare gli eventi stressanti da una prospettiva relazionale: il coping diadico | 31-43, 44-56
 Cap 3 | Il lavoro con la diade paziente-caregiver: considerazioni metodologiche ed etiche | 59-70, 71-83
@@ -140,7 +144,8 @@ Cap 14 | Analisi cliniche di due patologie somatiche secondo il modello della re
 Cap 15 | Relazioni interne e salute: studi empirici | 395-412
 Cap 16 | Relazioni esterne (adulte) e salute | 413-430`;
 
-var state = { books: [] };
+var PENCIL = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>';
+var state = { books: [], deadline: '2026-12-08' };
 var ui = { view: 'piano', edit: false, collapsed: {}, importText: '', mode: 'add', preview: null };
 var sheetCtx = null;
 
@@ -153,6 +158,14 @@ function esc(s) {
 function uid() { return 'x' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3); }
 function okColor(c) { return typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c); }
 function clean(s) { return String(s).replace(/\|/g, '/').replace(/\s+/g, ' ').trim(); }
+var MONTHS = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+function isDate(s) {
+  var m = typeof s === 'string' && s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return false;
+  var y = +m[1], mo = +m[2], d = +m[3], dt = new Date(y, mo - 1, d);
+  return dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d;
+}
+function fmtDate(s) { var p = s.split('-'); return parseInt(p[2], 10) + ' ' + MONTHS[parseInt(p[1], 10) - 1] + ' ' + p[0]; }
 function byId(list, id) { for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i]; return null; }
 function nextColor() {
   var used = state.books.map(function (b) { return b.color.toLowerCase(); });
@@ -198,18 +211,31 @@ function parseSessions(field, errs) {
 }
 
 function parseText(text) {
-  var books = [], errors = [], cur = null;
+  var books = [], errors = [], cur = null, deadline = null;
   String(text).split(/\r?\n/).forEach(function (raw, i) {
     var line = raw.trim();
     if (!line || line.indexOf('//') === 0) return;
     var ln = 'Riga ' + (i + 1) + ': ';
+    if (line.charAt(0) === '@') {
+      var dm = line.match(/^@scadenza\s*\|?\s*(\S*)\s*$/i);
+      if (!dm || !isDate(dm[1])) { errors.push(ln + 'scadenza non valida. Usa per esempio @scadenza | 2026-12-08.'); return; }
+      deadline = dm[1];
+      return;
+    }
     if (line.charAt(0) === '#') {
       var p = line.slice(1).split('|');
       var name = clean(p[0]);
-      var col = (p[1] || '').trim();
+      var col = '', dl = null, bad = null;
+      p.slice(1).forEach(function (x) {
+        x = x.trim();
+        if (!x) return;
+        if (okColor(x)) col = x;
+        else if (isDate(x)) dl = x;
+        else bad = x;
+      });
       if (!name) { errors.push(ln + 'libro senza nome.'); cur = null; return; }
-      if (col && !okColor(col)) { errors.push(ln + 'colore non valido (' + col + '), uso uno automatico.'); col = ''; }
-      cur = { name: name, color: col, chapters: [] };
+      if (bad) errors.push(ln + 'campo non riconosciuto (' + bad + '). Dopo il nome puoi mettere un colore (#2F5DA8) e una scadenza (2026-12-08).');
+      cur = { name: name, color: col, deadline: dl, chapters: [] };
       books.push(cur);
       return;
     }
@@ -229,7 +255,7 @@ function parseText(text) {
     if (!b.chapters.length) { errors.push('Il libro "' + b.name + '" non ha capitoli.'); return false; }
     return true;
   });
-  return { books: books, errors: errors };
+  return { books: books, errors: errors, deadline: deadline };
 }
 
 function findBookByName(name) {
@@ -239,15 +265,17 @@ function findBookByName(name) {
 }
 
 function applyParsed(parsed, mode) {
-  if (mode === 'replace') state.books = [];
+  if (parsed.deadline) state.deadline = parsed.deadline;
+  if (mode === 'replace' && parsed.books.length) state.books = [];
   parsed.books.forEach(function (pb) {
     var book = findBookByName(pb.name);
     if (!book) {
-      book = { id: uid(), name: pb.name, color: pb.color || nextColor(), chapters: [] };
+      book = { id: uid(), name: pb.name, color: pb.color || nextColor(), deadline: null, chapters: [] };
       state.books.push(book);
     } else if (pb.color) {
       book.color = pb.color;
     }
+    if (pb.deadline) book.deadline = pb.deadline;
     pb.chapters.forEach(function (pc) {
       var sessions = pc.sessions.map(function (s) { return { from: s.from, to: s.to, done: s.done }; });
       var ex = null;
@@ -267,8 +295,9 @@ function applyParsed(parsed, mode) {
 }
 
 function toText() {
-  return state.books.map(function (b) {
-    return '# ' + b.name + ' | ' + b.color + '\n' + b.chapters.map(function (c) {
+  var head = state.deadline ? '@scadenza | ' + state.deadline + '\n\n' : '';
+  return head + state.books.map(function (b) {
+    return '# ' + b.name + ' | ' + b.color + (b.deadline ? ' | ' + b.deadline : '') + '\n' + b.chapters.map(function (c) {
       return 'Cap ' + c.n + ' | ' + c.title + ' | ' + c.sessions.map(function (s) {
         return s.from + '-' + s.to + (s.done ? '*' : '');
       }).join(', ');
@@ -284,10 +313,10 @@ function save() {
 }
 
 function sanitize(o) {
-  var out = { books: [] };
+  var out = { books: [], deadline: o.deadline === null ? null : (isDate(o.deadline) ? o.deadline : '2026-12-08') };
   o.books.forEach(function (b, bi) {
     if (!b || typeof b.name !== 'string') return;
-    var nb = { id: String(b.id || uid()), name: b.name, color: okColor(b.color) ? b.color : PALETTE[bi % PALETTE.length], chapters: [] };
+    var nb = { id: String(b.id || uid()), name: b.name, color: okColor(b.color) ? b.color : PALETTE[bi % PALETTE.length], deadline: isDate(b.deadline) ? b.deadline : null, chapters: [] };
     (Array.isArray(b.chapters) ? b.chapters : []).forEach(function (c) {
       if (!c || typeof c.title !== 'string') return;
       var ss = [];
@@ -344,7 +373,8 @@ function bookCard(b) {
     });
   });
   h += '</div>';
-  h += '<div class="tools"><button class="btn" data-act="collapse" data-b="' + bid + '" aria-expanded="' + open + '">' + (open ? 'Nascondi capitoli' : 'Mostra capitoli') + '</button>';
+  h += '<div class="tools"><button class="btn" data-act="collapse" data-b="' + bid + '" aria-expanded="' + open + '">' + (open ? 'Nascondi capitoli' : 'Mostra capitoli') + '</button>' +
+    '<button class="btn" data-act="editBookDeadline" data-b="' + bid + '">' + (b.deadline ? 'Scadenza: ' + esc(fmtDate(b.deadline)) : '+ Scadenza') + '</button>';
   if (ui.edit) {
     h += '<button class="btn" data-act="editBook" data-b="' + bid + '">Libro</button>';
     h += '<button class="btn" data-act="addCh" data-b="' + bid + '">+ Capitolo</button>';
@@ -375,7 +405,7 @@ function bookCard(b) {
 
 function viewPiano() {
   var T = totals();
-  var h = '<header class="head"><div class="eyebrow">Scadenza 8 dicembre 2026</div><div class="row"><h1>Piano studio</h1>' +
+  var h = '<header class="head"><button class="dl" data-act="editDeadline">' + (state.deadline ? 'Scadenza ' + esc(fmtDate(state.deadline)) : '+ Scadenza generale') + PENCIL + '</button><div class="row"><h1>Piano studio</h1>' +
     '<button class="btn" data-act="edit" aria-pressed="' + (ui.edit ? 'true' : 'false') + '">' + (ui.edit ? 'Fine' : 'Modifica') + '</button></div></header>';
   h += '<div class="stats">' +
     '<div class="stat"><div class="l">Sessioni totali</div><div class="v">' + T.n + '</div></div>' +
@@ -394,6 +424,7 @@ function viewPiano() {
 function previewHtml(p) {
   if (!p) return '';
   var h = '<div class="prev">';
+  if (p.deadline) h += '<div class="note">Scadenza generale: ' + esc(fmtDate(p.deadline)) + '</div>';
   if (p.errors.length) {
     h += '<div class="err" role="alert"><strong>Da correggere:</strong><ul>' + p.errors.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul></div>';
   }
@@ -402,17 +433,17 @@ function previewHtml(p) {
     b.chapters.forEach(function (c) { c.sessions.forEach(function (s) { n++; pg += s.to - s.from + 1; }); });
     var exists = ui.mode === 'add' && findBookByName(b.name);
     h += '<div class="pb"><div class="pbt" style="color:' + (b.color || '#1B2433') + '">' + esc(b.name) + '</div>' +
-      '<div class="mut">' + b.chapters.length + ' capitoli · ' + n + ' sessioni · ' + pg + ' pagine' + (exists ? ' · libro già presente: aggiorno i capitoli con lo stesso numero' : '') + '</div><ul>';
+      '<div class="mut">' + b.chapters.length + ' capitoli · ' + n + ' sessioni · ' + pg + ' pagine' + (b.deadline ? ' · scadenza ' + fmtDate(b.deadline) : '') + (exists ? ' · libro già presente: aggiorno i capitoli con lo stesso numero' : '') + '</div><ul>';
     b.chapters.forEach(function (c) {
       h += '<li>Cap ' + c.n + ': ' + esc(c.title) + ' (' + c.sessions.map(function (s) { return s.from + '-' + s.to + (s.done ? '*' : ''); }).join(', ') + ')</li>';
     });
     h += '</ul></div>';
   });
-  if (ui.mode === 'replace' && state.books.length) {
+  if (ui.mode === 'replace' && state.books.length && p.books.length) {
     h += '<div class="err">Sostituisci tutto: i ' + state.books.length + ' libri attuali e i loro progressi verranno eliminati. Fai prima un backup.</div>';
   }
-  if (!p.errors.length && p.books.length) {
-    h += '<div class="actions" style="margin-top:0"><button class="btn primary" data-act="confirmImport">Importa ' + p.books.length + (p.books.length === 1 ? ' libro' : ' libri') + '</button></div>';
+  if (!p.errors.length && (p.books.length || p.deadline)) {
+    h += '<div class="actions" style="margin-top:0"><button class="btn primary" data-act="confirmImport">' + (p.books.length ? 'Importa ' + p.books.length + (p.books.length === 1 ? ' libro' : ' libri') : 'Applica la scadenza') + '</button></div>';
   }
   h += '</div>';
   return h;
@@ -432,8 +463,8 @@ function viewImport() {
   h += '<label class="f" for="exp">Backup attuale</label><textarea id="exp" rows="6" readonly spellcheck="false">' + esc(toText()) + '</textarea>';
   h += '<div class="actions"><button class="btn" data-act="copy">Copia</button><button class="btn" data-act="download">Scarica .txt</button></div></section>';
 
-  h += '<section class="card"><h2>Formato</h2><p class="mut" style="margin-top:6px">Una riga con # per ogni libro (il colore è facoltativo). Una riga per capitolo: numero | titolo | pagine. Più intervalli separati da virgola sono più sessioni. Un solo intervallo seguito da /15 si divide in sessioni da circa 15 pagine. Un * dopo l\'intervallo segna la sessione come fatta.</p>' +
-    '<pre>' + esc('# Nome libro | #2F5DA8\nCap 1 | Titolo del capitolo | 15-30\nCap 2 | Titolo | 31-43, 44-56*\nCap 3 | Titolo | 57-102 /15') + '</pre></section>';
+  h += '<section class="card"><h2>Formato</h2><p class="mut" style="margin-top:6px">Una riga @scadenza | 2026-12-08 fissa la scadenza generale. Una riga con # per ogni libro: dopo il nome puoi mettere il colore e la scadenza del libro (2026-11-15), entrambi facoltativi. Una riga per capitolo: numero | titolo | pagine. Più intervalli separati da virgola sono più sessioni. Un solo intervallo seguito da /15 si divide in sessioni da circa 15 pagine. Un * dopo l\'intervallo segna la sessione come fatta.</p>' +
+    '<pre>' + esc('@scadenza | 2026-12-08\n\n# Nome libro | #2F5DA8 | 2026-11-15\nCap 1 | Titolo del capitolo | 15-30\nCap 2 | Titolo | 31-43, 44-56*\nCap 3 | Titolo | 57-102 /15') + '</pre></section>';
   return h;
 }
 
@@ -465,6 +496,27 @@ function closeSheet() {
   $('ov').hidden = true;
   document.body.classList.remove('lock');
   sheetCtx = null;
+}
+
+function deadlineSheet(book) {
+  var cur = book ? book.deadline : state.deadline;
+  var f = '<label class="f" for="dd">Data</label><input type="date" id="dd" name="date" value="' + (cur && isDate(cur) ? cur : '') + '">';
+  openSheet(book ? 'Scadenza di ' + book.name : 'Scadenza generale', f, {
+    del: !!cur,
+    delLabel: 'Rimuovi scadenza',
+    submit: function (form) {
+      var v = form.elements.date.value;
+      if (!isDate(v)) return 'Scegli una data, oppure usa Rimuovi scadenza.';
+      if (book) book.deadline = v; else state.deadline = v;
+      save();
+      return null;
+    },
+    onDelete: function () {
+      if (book) book.deadline = null; else state.deadline = null;
+      save();
+      return true;
+    }
+  });
 }
 
 function bookSheet(book) {
@@ -587,6 +639,8 @@ document.addEventListener('click', function (ev) {
     case 'collapse': if (b) { ui.collapsed[b.id] = !ui.collapsed[b.id]; render(); } break;
     case 'addBook': bookSheet(null); break;
     case 'editBook': if (b) bookSheet(b); break;
+    case 'editDeadline': deadlineSheet(null); break;
+    case 'editBookDeadline': if (b) deadlineSheet(b); break;
     case 'addCh': if (b) chSheet(b, null); break;
     case 'editCh': if (b && c) chSheet(b, c); break;
     case 'sheetClose': closeSheet(); break;
@@ -601,14 +655,14 @@ document.addEventListener('click', function (ev) {
       $('prev').innerHTML = previewHtml(ui.preview);
       break;
     case 'confirmImport':
-      if (ui.preview && ui.preview.books.length && !ui.preview.errors.length) {
-        if (ui.mode === 'replace' && state.books.length && !window.confirm('Sostituire tutti i libri e i progressi attuali?')) return;
+      if (ui.preview && (ui.preview.books.length || ui.preview.deadline) && !ui.preview.errors.length) {
+        if (ui.mode === 'replace' && ui.preview.books.length && state.books.length && !window.confirm('Sostituire tutti i libri e i progressi attuali?')) return;
         var n = ui.preview.books.length;
         applyParsed(ui.preview, ui.mode);
         save();
         ui.preview = null; ui.importText = ''; ui.view = 'piano';
         render(false);
-        toast(n === 1 ? 'Libro importato' : n + ' libri importati');
+        toast(n === 0 ? 'Scadenza aggiornata' : n === 1 ? 'Libro importato' : n + ' libri importati');
       }
       break;
     case 'copy': copyBackup(); break;
