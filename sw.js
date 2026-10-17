@@ -1,4 +1,4 @@
-const CACHE = "pianificatore-esami-v2";
+const CACHE = "pianificatore-esami-v3";
 const FILES = ["./", "index.html", "app.js", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", (e) => {
