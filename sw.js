@@ -1,6 +1,7 @@
-const CACHE = "pianificatore-esami-v4";
+const CACHE = "pianificatore-esami-v5";
 const FILES = ["./", "index.html", "app.js", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png",
-  "backup.js", "piano-studio.html", "piano-studio.webmanifest", "piano-studio-icon.png", "home/index.html"];
+  "backup.js", "piano-studio.html", "piano-studio.webmanifest", "piano-studio-icon.png", "home/index.html",
+  "bonsai.html", "bonsai.webmanifest", "bonsai-icon.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));

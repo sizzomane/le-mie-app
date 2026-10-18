@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bonsai">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="bonsai.webmanifest">
+<link rel="apple-touch-icon" href="bonsai-icon.png">
+<link rel="icon" href="bonsai-icon.png">
+<title>Bonsai</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f2f2f7;--card:#fff;--fg:#000;--fg2:#6c6c70;--fg3:#8e8e93;--sep:rgba(60,60,67,.22);
+  --accent:#1f8a4c;--on-accent:#fff;--accent-soft:rgba(31,138,76,.12);
+  --red:#d70015;--red-soft:rgba(215,0,21,.1);--amber:#b25000;--amber-soft:rgba(178,80,0,.12);
+  --fill:rgba(118,118,128,.12);--bar:rgba(246,246,248,.82);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro",system-ui,"Segoe UI",Roboto,sans-serif;
+  --tabh:56px;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#000;--card:#1c1c1e;--fg:#fff;--fg2:#98989f;--fg3:#7c7c82;--sep:rgba(84,84,88,.6);
+    --accent:#32d074;--on-accent:#04210f;--accent-soft:rgba(50,208,116,.16);
+    --red:#ff453a;--red-soft:rgba(255,69,58,.18);--amber:#ff9f0a;--amber-soft:rgba(255,159,10,.18);
+    --fill:rgba(118,118,128,.24);--bar:rgba(22,22,24,.82)}
+}
+html{-webkit-text-size-adjust:100%}
+html.lock,html.lock body{overflow:hidden}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.35 var(--font);-webkit-font-smoothing:antialiased;
+  padding-bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 28px)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bar);z-index:30}
+[hidden]{display:none!important}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+::placeholder{color:var(--fg3);opacity:1}
+svg{display:block;flex:none}
+
+#screen{max-width:640px;margin:0 auto}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* barra superiore */
+.navbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;height:44px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 max(6px,env(safe-area-inset-left,0px)) 0 max(6px,env(safe-area-inset-right,0px));transition:background .2s}
+.navbar.scrolled{background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 .5px 0 var(--sep)}
+.navbar .nt{position:absolute;left:50%;transform:translateX(-50%);font-weight:600;max-width:46%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transition:opacity .15s;pointer-events:none}
+.navbar.scrolled .nt{opacity:1}
+.nbtn{color:var(--accent);min-height:44px;min-width:44px;padding:0 10px;display:flex;align-items:center;justify-content:center}
+.large{font-size:34px;font-weight:700;letter-spacing:.2px;line-height:1.12;margin:2px 0 14px}
+.sub{margin:-8px 0 14px;color:var(--fg2);font-size:15px}
+.sub i{font-style:italic}
+
+/* liste a gruppi */
+.list{background:var(--card);border-radius:12px;overflow:hidden;--inset:16px}
+.row{position:relative;display:flex;align-items:center;gap:12px;min-height:46px;padding:9px 16px;width:100%}
+.row+.row::before{content:"";position:absolute;top:0;left:var(--inset);right:0;height:.5px;background:var(--sep)}
+button.row:active,.main:active{background:var(--fill)}
+.row .main{flex:1;min-width:0;display:block;text-align:left}
+.t{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.s{display:block;font-size:14px;color:var(--fg2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.s i{font-style:italic}
+.s.red,.r.red{color:var(--red);font-weight:600}
+.s.amber,.r.amber{color:var(--amber);font-weight:600}
+.r{color:var(--fg2);font-size:15px;white-space:nowrap}
+.chev::after{content:"";width:8px;height:8px;border-right:2px solid var(--fg3);border-top:2px solid var(--fg3);transform:rotate(45deg);margin-left:2px;flex:none;opacity:.7}
+.row.muted,.frow.muted{color:var(--fg2);font-size:15px}
+.row.note{display:block;white-space:pre-wrap;overflow-wrap:anywhere}
+.row.act{color:var(--accent)}
+.sec{display:flex;justify-content:space-between;align-items:baseline;margin:26px 16px 7px}
+.sec h3{margin:0;font-size:13px;font-weight:400;text-transform:uppercase;letter-spacing:.04em;color:var(--fg2)}
+.link{color:var(--accent);font-size:15px;font-weight:500;padding:4px 0 4px 12px}
+.foot{font-size:13px;color:var(--fg2);margin:8px 16px 0}
+.foot.red{color:var(--red)}.foot.amber{color:var(--amber)}
+
+.thumb{width:52px;height:52px;border-radius:10px;overflow:hidden;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.search{width:100%;height:36px;border:0;border-radius:10px;background:var(--fill);padding:0 12px;margin:0 0 16px;font-size:17px;-webkit-appearance:none;appearance:none}
+
+.hero{display:grid;place-items:center;width:100%;aspect-ratio:4/3;border-radius:16px;overflow:hidden;background:var(--accent-soft);color:var(--accent);margin:0 0 4px}
+.hero img{width:100%;height:100%;object-fit:cover;display:block}
+.hero.empty{aspect-ratio:16/7;align-content:center;justify-items:center;gap:6px;font-size:15px;font-weight:500}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;border-radius:12px;overflow:hidden;background:var(--bg)}
+.grid>button{position:relative;aspect-ratio:1;overflow:hidden;background:var(--fill)}
+.grid img{width:100%;height:100%;object-fit:cover;display:block}
+.grid .cap{position:absolute;left:0;right:0;bottom:0;padding:16px 6px 4px;font-size:11px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.6));text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grid .add{display:grid;place-items:center;background:var(--card);color:var(--accent);font-size:13px;font-weight:500;align-content:center;justify-items:center;gap:2px}
+
+.done{width:28px;height:28px;border-radius:50%;border:2px solid var(--accent);flex:none;margin-left:-2px}
+.done:active{background:var(--accent-soft)}
+.badge{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--fill);color:var(--fg2);white-space:nowrap}
+.btn{display:block;width:100%;min-height:50px;border-radius:12px;background:var(--accent);color:var(--on-accent);font-weight:600;text-align:center;padding:0 16px}
+.btn.plain{background:var(--card);color:var(--accent)}
+.btn.danger{background:var(--card);color:var(--red)}
+.btn:active{opacity:.75}
+.stack{display:grid;gap:12px;margin-top:22px}
+.empty{text-align:center;padding:48px 24px;color:var(--fg2)}
+.empty svg{margin:0 auto 12px;color:var(--accent)}
+.empty h2{margin:0 0 6px;font-size:20px;color:var(--fg)}
+.empty p{margin:0 auto 20px;max-width:30ch;font-size:15px}
+.empty .btn{max-width:280px;margin:0 auto}
+
+/* barra schede */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 -.5px 0 var(--sep);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabbar-in{max-width:640px;margin:0 auto;display:flex;height:var(--tabh);padding:0 max(0px,env(safe-area-inset-left,0px)) 0 max(0px,env(safe-area-inset-right,0px))}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--fg3);font-size:10.5px;font-weight:500;position:relative}
+.tab svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-current=page]{color:var(--accent)}
+.tab .count{position:absolute;top:3px;left:calc(50% + 7px);min-width:18px;height:18px;border-radius:9px;background:var(--red);color:#fff;font-size:11px;font-weight:600;display:grid;place-items:center;padding:0 5px}
+
+/* fogli modali */
+#sheetRoot{position:fixed;inset:0;z-index:50;pointer-events:none}
+#sheetRoot:not(:empty){pointer-events:auto}
+.backdrop{position:absolute;inset:0;background:rgba(0,0,0,.42);opacity:0;transition:opacity .22s}
+.sheet{position:absolute;left:0;right:0;bottom:0;top:max(28px,env(safe-area-inset-top,0px));max-width:640px;margin:0 auto;background:var(--bg);border-radius:14px 14px 0 0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .26s cubic-bezier(.2,.8,.2,1);overflow:hidden}
+#sheetRoot.open .backdrop{opacity:1}
+#sheetRoot.open .sheet{transform:none}
+.sheet-h{display:flex;align-items:center;height:52px;flex:none;padding:0 6px;border-bottom:.5px solid var(--sep);background:var(--bg)}
+.sheet-h h2{flex:1;margin:0;font-size:17px;font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbtn{color:var(--accent);min-width:78px;height:44px;padding:0 10px;text-align:left}
+.tbtn.bold{font-weight:600;text-align:right}
+.sheet-b{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:18px max(16px,env(safe-area-inset-left,0px)) calc(40px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-right,0px))}
+.group{background:var(--card);border-radius:12px;overflow:hidden}
+.group.gap{margin-top:16px}
+.frow{position:relative;display:flex;align-items:center;gap:12px;min-height:46px;padding:0 16px;width:100%}
+.frow+.frow::before{content:"";position:absolute;top:0;left:16px;right:0;height:.5px;background:var(--sep)}
+.frow>span{flex:none}
+.frow .grow{flex:1;min-width:0}
+.frow small{display:block;font-size:13px;color:var(--fg2)}
+.frow.col{flex-direction:column;align-items:stretch;padding:10px 16px}
+.frow .txt,.frow .sel{flex:1;min-width:0;height:44px;border:0;background:transparent;text-align:right;outline:none;-webkit-appearance:none;appearance:none}
+.frow .sel{text-align-last:right}
+.frow input[type=date]{min-height:44px}
+.frow textarea{border:0;background:transparent;outline:none;resize:none;min-height:84px;width:100%;line-height:1.35}
+.frow .unit{font-style:normal;color:var(--fg2)}
+.lbl{margin:22px 16px 7px;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--fg2)}
+.switch{-webkit-appearance:none;appearance:none;width:51px;height:31px;border-radius:16px;background:var(--fill);position:relative;flex:none;border:0;margin:0;transition:background .2s}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.28);transition:transform .2s}
+.switch:checked{background:var(--accent)}
+.switch:checked::after{transform:translateX(20px)}
+.chk{-webkit-appearance:none;appearance:none;width:24px;height:24px;border-radius:50%;border:1.6px solid var(--fg3);flex:none;margin:0;display:grid;place-items:center}
+.chk:checked{background:var(--accent);border-color:var(--accent)}
+.chk:checked::after{content:"";width:6px;height:11px;border:solid var(--on-accent);border-width:0 2.4px 2.4px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.pick{display:flex;align-items:center;gap:16px;margin-bottom:4px}
+.pick .thumb{width:88px;height:88px;border-radius:14px}
+.pick .btns{display:grid;gap:8px;justify-items:start}
+.pbtn{color:var(--accent);font-weight:500;padding:4px 0}
+.pbtn.red{color:var(--red)}
+.photo-big{display:grid;place-items:center;width:100%;background:var(--card);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.photo-big img{max-width:100%;max-height:46vh;object-fit:contain;display:block}
+.sumrow{display:flex;justify-content:space-between}
+
+.lb{position:fixed;inset:0;z-index:70;background:#000;display:flex;align-items:center;justify-content:center}
+.lb img{max-width:100%;max-height:100%;object-fit:contain}
+.lb-x{position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);right:calc(env(safe-area-inset-right,0px) + 12px);width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;display:grid;place-items:center}
+.toast{position:fixed;left:50%;bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px) + 14px);transform:translate(-50%,8px);background:rgba(44,44,46,.94);color:#fff;padding:10px 16px;border-radius:999px;font-size:15px;opacity:0;transition:opacity .2s,transform .2s;z-index:80;pointer-events:none;max-width:90%;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<main id="screen"></main>
+<nav class="tabbar" aria-label="Sezioni"><div class="tabbar-in">
+  <a class="tab" data-tab="piante" href="#/piante"><svg viewBox="0 0 24 24"><path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14"/><path d="M5 19c3-4 6-7 10-9"/></svg><span>Piante</span></a>
+  <a class="tab" data-tab="oggi" href="#/oggi"><svg viewBox="0 0 24 24"><path d="M4 7l2 2 3-3"/><path d="M12 7h8"/><path d="M4 16l2 2 3-3"/><path d="M12 16h8"/></svg><span>Da fare</span><b class="count" hidden></b></a>
+  <a class="tab" data-tab="concimi" href="#/concimi"><svg viewBox="0 0 24 24"><path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z"/></svg><span>Concimi</span></a>
+  <a class="tab" data-tab="dati" href="#/dati"><svg viewBox="0 0 24 24"><path d="M12 4v10"/><path d="M8 10l4 4 4-4"/><path d="M5 19h14"/></svg><span>Backup</span></a>
+</div></nav>
+<div id="sheetRoot"></div>
+<div id="lb" class="lb" data-act="lb-close" hidden></div>
+<div id="toast" class="toast" role="status"></div>
+<input type="file" id="fileMain" accept="image/*" hidden>
+<input type="file" id="fileGal" accept="image/*" multiple hidden>
+<input type="file" id="fileImp" accept="application/json,.json" hidden>
+
+<script>
+(function(){
+'use strict';
+var $=function(s,r){return (r||document).querySelector(s)};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var uid=function(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4)};
+var plural=function(n,a,b){return n===1?a:b};
+
+/* ---------- date ---------- */
+var pad=function(n){return String(n).padStart(2,'0')};
+function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function today(){return ymd(new Date())}
+function parse(s){var a=s.split('-').map(Number);return new Date(a[0],a[1]-1,a[2])}
+function addDays(s,n){var d=parse(s);d.setDate(d.getDate()+n);return ymd(d)}
+function diffDays(a,b){return Math.round((parse(a)-parse(b))/86400000)}
+function fmt(s,y){var o={day:'numeric',month:'short'};if(y)o.year='numeric';return parse(s).toLocaleDateString('it-IT',o)}
+function rel(s){var n=diffDays(s,today());if(n===0)return'Oggi';if(n===1)return'Domani';if(n===-1)return'Ieri';if(n>1)return'Tra '+n+' giorni';return Math.abs(n)+' giorni fa'}
+function urg(s){var n=diffDays(s,today());return n<0?'red':n===0?'amber':''}
+
+/* ---------- icone ---------- */
+var I={
+  plus:'<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  back:'<svg viewBox="0 0 12 20" width="12" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px"><path d="M10 2L2 10l8 8"/></svg>',
+  x:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  leaf:'<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14"/><path d="M5 19c3-4 6-7 10-9"/></svg>',
+  leafBig:'<svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14"/><path d="M5 19c3-4 6-7 10-9"/></svg>',
+  camera:'<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>'
+};
+
+/* ---------- dati ---------- */
+var KEY='bonsai.dati.v1', LB='bonsai.ultimoBackup';
+var S={plants:[],ferts:[],history:[],future:[]};
+var thumbs=new Map();
+function norm(){
+  S.plants.forEach(function(p){p.gallery=p.gallery||[];p.ferts=p.ferts||[];p.dosi=p.dosi||{}});
+  S.future.forEach(function(f){f.ogni=f.ogni||0;f.paused=!!f.paused});
+}
+function load(){try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);S={plants:o.plants||[],ferts:o.ferts||[],history:o.history||[],future:o.future||[]}}}catch(e){}norm()}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(S));return true}catch(e){toast('Salvataggio non riuscito: memoria del browser non disponibile');return false}}
+function plantById(id){return S.plants.find(function(p){return p.id===id})}
+function fertById(id){return S.ferts.find(function(f){return f.id===id})}
+function futSort(a,b){return a.date.localeCompare(b.date)||a.tipo.localeCompare(b.tipo,'it')}
+
+/* ---------- foto (IndexedDB) ---------- */
+var _db;
+function idb(){return _db||(_db=new Promise(function(res,rej){
+  var r=indexedDB.open('bonsai-foto',1);
+  r.onupgradeneeded=function(){var d=r.result;d.createObjectStore('thumbs');d.createObjectStore('full')};
+  r.onsuccess=function(){res(r.result)};r.onerror=function(){rej(r.error)};
+}))}
+function allEntries(store){return idb().then(function(db){return new Promise(function(res,rej){
+  var t=db.transaction(store,'readonly'),s=t.objectStore(store),k=s.getAllKeys(),v=s.getAll();
+  t.oncomplete=function(){res(k.result.map(function(key,i){return [key,v.result[i]]}))};t.onerror=function(){rej(t.error)};
+})})}
+function getFull(id){return idb().then(function(db){return new Promise(function(res,rej){
+  var t=db.transaction('full','readonly'),q=t.objectStore('full').get(id);
+  t.oncomplete=function(){res(q.result)};t.onerror=function(){rej(t.error)};
+})})}
+function putPhoto(id,full,thumb){return idb().then(function(db){return new Promise(function(res,rej){
+  var t=db.transaction(['thumbs','full'],'readwrite');
+  t.objectStore('thumbs').put(thumb,id);t.objectStore('full').put(full,id);
+  t.oncomplete=function(){res()};t.onerror=function(){rej(t.error)};t.onabort=function(){rej(t.error)};
+})})}
+function delPhoto(id){return idb().then(function(db){return new Promise(function(res,rej){
+  var t=db.transaction(['thumbs','full'],'readwrite');
+  t.objectStore('thumbs').delete(id);t.objectStore('full').delete(id);
+  t.oncomplete=function(){res()};t.onerror=function(){rej(t.error)};
+})})}
+function clearPhotos(){return idb().then(function(db){return new Promise(function(res,rej){
+  var t=db.transaction(['thumbs','full'],'readwrite');
+  t.objectStore('thumbs').clear();t.objectStore('full').clear();
+  t.oncomplete=function(){res()};t.onerror=function(){rej(t.error)};
+})})}
+function fullOf(id){return getFull(id).then(function(f){return f||thumbs.get(id)}).catch(function(){return thumbs.get(id)})}
+function usedPhotos(){var s=new Set();S.plants.forEach(function(p){if(p.photo)s.add(p.photo);p.gallery.forEach(function(g){s.add(g.photo)})});return s}
+function gc(){
+  var used=usedPhotos(),ids=Array.from(thumbs.keys()).filter(function(id){return !used.has(id)});
+  return Promise.all(ids.map(function(id){thumbs.delete(id);return delPhoto(id).catch(function(){})}));
+}
+function scaled(img,max,q){
+  var w=img.naturalWidth,h=img.naturalHeight,k=Math.min(1,max/Math.max(w,h));
+  var c=document.createElement('canvas');c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));
+  c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/jpeg',q);
+}
+function addPhotoFile(file){return new Promise(function(res,rej){
+  var url=URL.createObjectURL(file),img=new Image();
+  img.onload=function(){
+    try{
+      var full=scaled(img,1280,.8),thumb=scaled(img,320,.75),id=uid();
+      putPhoto(id,full,thumb).then(function(){thumbs.set(id,thumb);URL.revokeObjectURL(url);res(id)},function(e){URL.revokeObjectURL(url);rej(e)});
+    }catch(e){URL.revokeObjectURL(url);rej(e)}
+  };
+  img.onerror=function(){URL.revokeObjectURL(url);rej(new Error('immagine non leggibile'))};
+  img.src=url;
+})}
+
+/* ---------- viste ---------- */
+function nextOf(pid){return S.future.filter(function(f){return f.plantId===pid&&!f.paused}).sort(futSort)[0]}
+function dueCount(){var t=today();return S.future.filter(function(f){return !f.paused&&f.date<=t&&plantById(f.plantId)}).length}
+function thumbHtml(id){return id&&thumbs.get(id)?'<img src="'+thumbs.get(id)+'" alt="">':I.leaf}
+function emptyState(title,text,btn){
+  return '<div class="empty">'+I.leafBig+'<h2>'+title+'</h2><p>'+text+'</p>'+(btn||'')+'</div>';
+}
+function navbar(left,title,right){return '<div class="navbar">'+left+'<span class="nt">'+esc(title)+'</span>'+right+'</div>'}
+var spacer='<span style="width:44px"></span>';
+
+function plantRow(p){
+  var n=nextOf(p.id),meta=[];
+  if(p.latino)meta.push('<i>'+esc(p.latino)+'</i>');
+  if(p.anno)meta.push(esc(p.anno));
+  var l2=meta.length?'<span class="s">'+meta.join(' · ')+'</span>':'';
+  var l3=n?'<span class="s '+urg(n.date)+'">'+esc(n.tipo)+' · '+rel(n.date).toLowerCase()+'</span>':'<span class="s">Nessun intervento in programma</span>';
+  var q=(p.nome+' '+(p.latino||'')+' '+(p.provenienza||'')).toLowerCase();
+  return '<button class="row chev" data-go="#/p/'+p.id+'" data-q="'+esc(q)+'"><span class="thumb">'+thumbHtml(p.photo)+'</span><span class="main"><span class="t">'+esc(p.nome)+'</span>'+l2+l3+'</span></button>';
+}
+function viewPlants(){
+  var ps=S.plants.slice().sort(function(a,b){return a.nome.localeCompare(b.nome,'it')});
+  var h=navbar(spacer,'Piante','<button class="nbtn" data-act="plant-new" aria-label="Aggiungi pianta">'+I.plus+'</button>')+'<div class="wrap"><h1 class="large">Piante</h1>';
+  if(!ps.length)return h+emptyState('Nessuna pianta','Aggiungi il primo bonsai con foto, anno di acquisto e concimi.','<button class="btn" data-act="plant-new">Aggiungi pianta</button>')+'</div>';
+  if(ps.length>=6)h+='<input class="search" id="q" type="search" placeholder="Cerca" autocomplete="off" aria-label="Cerca piante">';
+  return h+'<div class="list" id="plist" style="--inset:80px">'+ps.map(plantRow).join('')+'</div></div>';
+}
+
+function futRow(f,ctx){
+  var p=plantById(f.plantId),ric=f.ogni?'ogni '+f.ogni+' '+plural(f.ogni,'giorno','giorni'):'';
+  var sub,main,lead,right;
+  if(ctx==='oggi'){
+    sub=esc(p?p.nome:'')+(f.fertId&&fertById(f.fertId)?' · '+esc(fertById(f.fertId).nome):'')+(ric?' · '+ric:'');
+    main='<button class="main" data-go="#/p/'+f.plantId+'">';
+  }else{
+    sub=fmt(f.date,true)+(ric?' · '+ric:'')+(f.paused?' · in pausa':'');
+    main='<button class="main" data-act="fut-edit" data-id="'+f.id+'">';
+  }
+  lead=f.paused?'<span style="width:26px"></span>':'<button class="done" data-act="fut-done" data-id="'+f.id+'" aria-label="Segna come fatto"></button>';
+  right=f.paused?'<button class="link" data-act="fut-resume" data-id="'+f.id+'">Riprendi</button>':'<span class="r '+urg(f.date)+'">'+rel(f.date)+'</span>';
+  return '<div class="row">'+lead+main+'<span class="t">'+esc(f.tipo)+'</span><span class="s">'+sub+'</span></button>'+right+'</div>';
+}
+function histRow(h){
+  var fn=h.fertId&&fertById(h.fertId)?fertById(h.fertId).nome:(h.fertName||'');
+  var sub=[fn,h.note].filter(Boolean).map(esc).join(' · ');
+  return '<button class="row chev" data-act="hist-edit" data-id="'+h.id+'"><span class="main"><span class="t">'+esc(h.tipo)+'</span>'+(sub?'<span class="s">'+sub+'</span>':'')+'</span><span class="r">'+fmt(h.date,true)+'</span></button>';
+}
+var showAll={};
+function lastFert(pid,fid){
+  var l=S.history.filter(function(h){return h.plantId===pid&&h.fertId===fid}).map(function(h){return h.date}).sort().pop();
+  return l||null;
+}
+function viewPlant(p){
+  var hist=S.history.filter(function(h){return h.plantId===p.id}).sort(function(a,b){return b.date.localeCompare(a.date)});
+  var fut=S.future.filter(function(f){return f.plantId===p.id}).sort(futSort);
+  var h=navbar('<button class="nbtn" data-act="back">'+I.back+'Piante</button>',p.nome,'<button class="nbtn" data-act="plant-edit" data-id="'+p.id+'">Modifica</button>')+'<div class="wrap">';
+  h+='<h1 class="large">'+esc(p.nome)+'</h1>';
+  var meta=[];if(p.latino)meta.push('<i>'+esc(p.latino)+'</i>');
+  if(p.anno)meta.push('Acquistato nel '+esc(p.anno));if(p.provenienza)meta.push(esc(p.provenienza));
+  if(meta.length)h+='<p class="sub">'+meta.join(' · ')+'</p>';
+  if(p.photo&&thumbs.has(p.photo))h+='<button class="hero" data-act="lb" data-photo="'+p.photo+'" aria-label="Apri la foto"><img src="'+thumbs.get(p.photo)+'" data-full="'+p.photo+'" alt="'+esc(p.nome)+'"></button>';
+  else h+='<button class="hero empty" data-act="plant-edit" data-id="'+p.id+'">'+I.leafBig+'<span>Aggiungi la foto principale</span></button>';
+
+  h+='<div class="sec"><h3>Parassiti e attenzioni</h3></div><div class="list">'+(p.parassiti?'<div class="row note">'+esc(p.parassiti)+'</div>':'<div class="row muted">Nessuna nota. Aggiungila da Modifica.</div>')+'</div>';
+
+  h+='<div class="sec"><h3>Concimi</h3><button class="link" data-act="plant-edit" data-id="'+p.id+'">Scegli</button></div><div class="list">';
+  var fs=p.ferts.map(fertById).filter(Boolean);
+  if(!fs.length)h+='<div class="row muted">Nessun concime associato</div>';
+  else h+=fs.map(function(f){var l=lastFert(p.id,f.id);
+    return '<div class="row"><span class="main"><span class="t">'+esc(f.nome)+'</span><span class="s">'+esc([f.tipo,p.dosi&&p.dosi[f.id]?'Quantità: '+p.dosi[f.id]:''].filter(Boolean).join(' · '))+'</span></span><span class="r">'+(l?'Ultimo: '+fmt(l,true):'Mai dato')+'</span></div>'}).join('');
+  h+='</div>';
+
+  var g=p.gallery.slice().sort(function(a,b){return b.date.localeCompare(a.date)});
+  h+='<div class="sec"><h3>Galleria</h3></div><div class="grid"><button class="add" data-act="photo-add" data-id="'+p.id+'" aria-label="Aggiungi foto">'+I.camera+'<span>Aggiungi</span></button>';
+  h+=g.map(function(x){return '<button data-act="photo-open" data-id="'+p.id+'" data-gid="'+x.id+'"><img src="'+(thumbs.get(x.photo)||'')+'" alt=""><span class="cap">'+fmt(x.date,true)+'</span></button>'}).join('')+'</div>';
+
+  h+='<div class="sec"><h3>Interventi futuri</h3><button class="link" data-act="fut-add" data-id="'+p.id+'">Aggiungi</button></div><div class="list" style="--inset:54px">';
+  h+=fut.length?fut.map(function(f){return futRow(f,'plant')}).join(''):'<div class="row muted">Nessun intervento in programma</div>';
+  h+='</div>';
+
+  h+='<div class="sec"><h3>Storico interventi</h3><button class="link" data-act="hist-add" data-id="'+p.id+'">Aggiungi</button></div><div class="list">';
+  if(!hist.length)h+='<div class="row muted">Nessun intervento registrato</div>';
+  else{
+    var shown=showAll[p.id]?hist:hist.slice(0,10);
+    h+=shown.map(histRow).join('');
+    if(hist.length>10)h+='<button class="row act" data-act="hist-all" data-id="'+p.id+'">'+(showAll[p.id]?'Mostra solo gli ultimi 10':'Mostra tutti ('+hist.length+')')+'</button>';
+  }
+  h+='</div><div class="stack"><button class="btn danger" data-act="plant-del" data-id="'+p.id+'" data-confirm="Elimina pianta">Elimina pianta</button></div></div>';
+  return h;
+}
+
+function viewToday(){
+  var t=today(),lim=addDays(t,7);
+  var all=S.future.filter(function(f){return plantById(f.plantId)});
+  var act=all.filter(function(f){return !f.paused}).sort(function(a,b){return a.date.localeCompare(b.date)||plantById(a.plantId).nome.localeCompare(plantById(b.plantId).nome,'it')});
+  var paused=all.length-act.length;
+  var h=navbar(spacer,'Cosa fare',spacer)+'<div class="wrap"><h1 class="large">Cosa fare</h1>';
+  if(!act.length){
+    h+=emptyState('Niente in programma','Aggiungi gli interventi futuri dalla scheda di ogni pianta: compariranno qui.','');
+  }else{
+    var groups=[['In ritardo','red',function(f){return f.date<t}],['Oggi','',function(f){return f.date===t}],['Prossimi 7 giorni','',function(f){return f.date>t&&f.date<=lim}],['Più avanti','',function(f){return f.date>lim}]];
+    groups.forEach(function(g){
+      var l=act.filter(g[2]);if(!l.length)return;
+      h+='<div class="sec" style="margin-top:'+(g[0]==='In ritardo'?'4px':'26px')+'"><h3'+(g[1]?' style="color:var(--red)"':'')+'>'+g[0]+' ('+l.length+')</h3></div><div class="list" style="--inset:54px">'+l.map(function(f){return futRow(f,'oggi')}).join('')+'</div>';
+    });
+  }
+  if(paused)h+='<p class="foot">'+paused+' '+plural(paused,'ricorrenza in pausa non è mostrata','ricorrenze in pausa non sono mostrate')+'.</p>';
+  return h+'</div>';
+}
+
+function viewFerts(){
+  var fs=S.ferts.slice().sort(function(a,b){return a.nome.localeCompare(b.nome,'it')});
+  var h=navbar(spacer,'Concimi','<button class="nbtn" data-act="fert-new" aria-label="Aggiungi concime">'+I.plus+'</button>')+'<div class="wrap"><h1 class="large">Concimi</h1>';
+  if(!fs.length)return h+emptyState('Nessun concime','Crea l\'elenco dei concimi che usi. Poi li associ alle piante e li scegli quando registri una concimazione.','<button class="btn" data-act="fert-new">Aggiungi concime</button>')+'</div>';
+  h+='<div class="list">'+fs.map(function(f){
+    var n=S.plants.filter(function(p){return p.ferts.indexOf(f.id)>=0}).length;
+    return '<button class="row chev" data-act="fert-edit" data-id="'+f.id+'"><span class="main"><span class="t">'+esc(f.nome)+'</span><span class="s">'+esc([f.tipo,f.dose].filter(Boolean).join(' · '))+'</span></span><span class="r">'+n+' '+plural(n,'pianta','piante')+'</span></button>';
+  }).join('')+'</div>';
+  return h+'</div>';
+}
+
+function backupInfo(){
+  if(!S.plants.length&&!S.ferts.length)return {txt:'Non ci sono ancora dati da salvare.',cls:''};
+  var l=null;try{l=localStorage.getItem(LB)}catch(e){}
+  if(!l)return {txt:'Nessun backup eseguito. I dati sono solo su questo dispositivo.',cls:'red'};
+  var d=Math.floor((Date.now()-new Date(l).getTime())/86400000);
+  var when=d<=0?'oggi':d===1?'ieri':d+' giorni fa';
+  return {txt:'Ultimo backup: '+fmt(ymd(new Date(l)),true)+' ('+when+')'+(d>30?'. Ne è passato più di un mese.':''),cls:d>30?'amber':''};
+}
+function viewData(){
+  var b=backupInfo();
+  var h=navbar(spacer,'Backup',spacer)+'<div class="wrap"><h1 class="large">Backup</h1>';
+  var rows=[['Piante',S.plants.length],['Foto',thumbs.size],['Concimi',S.ferts.length],['Interventi registrati',S.history.length],['Interventi in programma',S.future.length]];
+  h+='<div class="list">'+rows.map(function(r){return '<div class="row sumrow"><span>'+r[0]+'</span><span class="r">'+r[1]+'</span></div>'}).join('')+'</div>';
+  h+='<p class="foot '+b.cls+'">'+esc(b.txt)+'</p>';
+  h+='<div class="sec"><h3>Esporta</h3></div><div class="list"><button class="row act" data-act="export-share">Condividi o salva su File</button><button class="row act" data-act="export-file">Scarica il file di backup</button></div>';
+  h+='<p class="foot">Il backup è un unico file con piante, foto, concimi e interventi.</p>';
+  h+='<div class="sec"><h3>Importa</h3></div><div class="list"><button class="row act" data-act="import-pick">Importa un backup…</button></div>';
+  h+='<p class="foot">L\'importazione sostituisce tutti i dati presenti su questo dispositivo.</p>';
+  h+='<div class="sec"><h3>Dove sono i dati</h3></div><div class="list"><div class="row note" style="font-size:15px">I dati restano nel browser di questo dispositivo e non si sincronizzano. Safari può cancellare i dati dei siti che non apre per una settimana: aggiungi l\'app alla schermata Home (Condividi, poi Aggiungi a Home) e fai un backup ogni tanto.</div></div>';
+  return h+'</div>';
+}
+
+/* ---------- disegno e navigazione ---------- */
+var navigated=false;
+function route(){var m=(location.hash||'').match(/^#\/(\w+)(?:\/(.+))?$/);return {name:m?m[1]:'piante',arg:m&&m[2]}}
+function render(keep){
+  var r=route(),y=window.scrollY,html;
+  if(r.name==='p'){var p=plantById(r.arg);html=p?viewPlant(p):navbar('<button class="nbtn" data-act="back">'+I.back+'Piante</button>','',spacer)+'<div class="wrap">'+emptyState('Pianta non trovata','Questa scheda non esiste più.','<button class="btn" data-go="#/piante">Vai alle piante</button>')+'</div>'}
+  else if(r.name==='oggi')html=viewToday();
+  else if(r.name==='concimi')html=viewFerts();
+  else if(r.name==='dati')html=viewData();
+  else html=viewPlants();
+  $('#screen').innerHTML=html;
+  var cur=r.name==='p'?'piante':(['oggi','concimi','dati'].indexOf(r.name)>=0?r.name:'piante');
+  $$('.tab').forEach(function(t){if(t.dataset.tab===cur)t.setAttribute('aria-current','page');else t.removeAttribute('aria-current')});
+  var n=dueCount(),c=$('.tab[data-tab="oggi"] .count');c.hidden=!n;c.textContent=n;
+  $$('img[data-full]').forEach(function(img){fullOf(img.dataset.full).then(function(src){if(src&&img.isConnected)img.src=src})});
+  try{window.scrollTo(0,keep?y:0)}catch(e){}
+  onScroll();
+}
+function onScroll(){var nb=$('.navbar');if(nb)nb.classList.toggle('scrolled',window.scrollY>36)}
+window.addEventListener('scroll',onScroll,{passive:true});
+window.addEventListener('hashchange',function(){navigated=true;if(sheetState)closeSheet(true);render(false)});
+
+var tt;function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(function(){t.classList.remove('show')},2800)}
+
+/* ---------- fogli ---------- */
+var sheetState=null;
+function openSheet(o){
+  var root=$('#sheetRoot');
+  sheetState={onSave:o.onSave,onCancel:o.onCancel};
+  root.innerHTML='<div class="backdrop"></div><section class="sheet" role="dialog" aria-modal="true" aria-label="'+esc(o.title)+'"><header class="sheet-h"><button class="tbtn" data-act="sheet-cancel">'+(o.cancel||'Annulla')+'</button><h2>'+esc(o.title)+'</h2>'+(o.onSave?'<button class="tbtn bold" data-act="sheet-save">'+(o.saveLabel||'Salva')+'</button>':'<span class="tbtn"></span>')+'</header><div class="sheet-b">'+o.body+'</div></section>';
+  document.documentElement.classList.add('lock');
+  requestAnimationFrame(function(){requestAnimationFrame(function(){root.classList.add('open')})});
+}
+function closeSheet(cancel){
+  var st=sheetState,root=$('#sheetRoot');sheetState=null;root.classList.remove('open');
+  setTimeout(function(){if(!sheetState&&!root.classList.contains('open')){root.innerHTML='';if($('#lb').hidden)document.documentElement.classList.remove('lock')}},260);
+  if(cancel&&st&&st.onCancel)st.onCancel();
+}
+function val(id){var e=document.getElementById(id);return e?e.value:''}
+function frow(label,inner){return '<label class="frow"><span>'+label+'</span>'+inner+'</label>'}
+function txt(id,v,ph,extra){return '<input class="txt" id="'+id+'" value="'+esc(v||'')+'" placeholder="'+esc(ph||'')+'" autocomplete="off" '+(extra||'')+'>'}
+function textarea(id,v,ph,rows){return '<label class="frow col"><textarea id="'+id+'" rows="'+(rows||3)+'" placeholder="'+esc(ph)+'">'+esc(v||'')+'</textarea></label>'}
+function fertSel(id,v){
+  if(!S.ferts.length)return '';
+  return frow('Concime','<select class="sel" id="'+id+'"><option value="">Nessuno</option>'+S.ferts.slice().sort(function(a,b){return a.nome.localeCompare(b.nome,'it')}).map(function(f){return '<option value="'+f.id+'"'+(f.id===v?' selected':'')+'>'+esc(f.nome)+'</option>'}).join('')+'</select>');
+}
+var DEF_TIPI=['Annaffiatura','Concimazione','Potatura','Rinvaso','Trattamento antiparassitario','Cablaggio','Defogliazione','Pinzatura'];
+function tipiList(){
+  var s=new Set(DEF_TIPI);S.history.forEach(function(h){s.add(h.tipo)});S.future.forEach(function(f){s.add(f.tipo)});
+  return '<datalist id="tipi">'+Array.from(s).sort(function(a,b){return a.localeCompare(b,'it')}).map(function(t){return '<option value="'+esc(t)+'">'}).join('')+'</datalist>';
+}
+
+var pick=null;
+function plantSheet(id){
+  var p=id?plantById(id):null,st={photo:p?p.photo||null:null},sel=p?p.ferts:[];
+  var fertRows=S.ferts.length?S.ferts.slice().sort(function(a,b){return a.nome.localeCompare(b.nome,'it')}).map(function(f){
+    var on=sel.indexOf(f.id)>=0;
+    return '<label class="frow"><span class="grow">'+esc(f.nome)+(f.tipo?'<small>'+esc(f.tipo)+'</small>':'')+'</span><input type="checkbox" class="chk" value="'+f.id+'"'+(on?' checked':'')+'></label>'
+      +'<label class="frow" id="pq-row-'+f.id+'"'+(on?'':' hidden')+'><span>Quantità</span><input class="txt" id="pq-'+f.id+'" value="'+esc(p&&p.dosi&&p.dosi[f.id])+'" placeholder="es. 2 palline, 5 ml" autocomplete="off"></label>';
+  }).join(''):'<div class="frow muted">Nessun concime nell\'elenco. Aggiungili dalla scheda Concimi.</div>';
+  var body='<div class="pick"><div class="thumb" id="pf-prev">'+thumbHtml(st.photo)+'</div><div class="btns"><button class="pbtn" data-act="pf-photo">'+(st.photo?'Cambia foto':'Scegli foto')+'</button><button class="pbtn red" data-act="pf-photo-rm">Rimuovi foto</button></div></div>'
+    +'<div class="group gap">'+frow('Nome',txt('pf-nome',p&&p.nome,'es. Acero palmato','autocapitalize="sentences"'))
+    +frow('Nome latino',txt('pf-latino',p&&p.latino,'facoltativo'))
+    +frow('Anno acquisto','<input class="txt" id="pf-anno" type="number" inputmode="numeric" min="1900" max="2100" value="'+esc(p&&p.anno)+'" placeholder="es. 2021">')
+    +frow('Provenienza',txt('pf-prov',p&&p.provenienza,'facoltativa'))+'</div>'
+    +'<div class="lbl">Parassiti e attenzioni</div><div class="group">'+textarea('pf-par',p&&p.parassiti,'Parassiti, malattie e cose da tenere d\'occhio',4)+'</div>'
+    +'<div class="lbl">Concimi</div><div class="group">'+fertRows+'</div>';
+  openSheet({title:p?'Modifica pianta':'Nuova pianta',body:body,
+    onCancel:function(){gc()},
+    onSave:function(){
+      var nome=val('pf-nome').trim();if(!nome){$('#pf-nome').focus();return false}
+      var o={nome:nome,latino:val('pf-latino').trim(),anno:val('pf-anno').trim(),provenienza:val('pf-prov').trim(),parassiti:val('pf-par').trim(),
+        ferts:$$('#sheetRoot .chk:checked').map(function(i){return i.value}),photo:st.photo,dosi:{}};
+      o.ferts.forEach(function(fid){var q=val('pq-'+fid).trim();if(q)o.dosi[fid]=q});
+      var nid=null;
+      if(p)Object.assign(p,o);else{nid=uid();S.plants.push(Object.assign({id:nid,gallery:[]},o))}
+      persist();gc();
+      if(nid)location.hash='#/p/'+nid;else render(true);
+    }});
+  pick={kind:'main',st:st};
+}
+function fertSheet(id){
+  var f=id?fertById(id):null,n=f?S.plants.filter(function(p){return p.ferts.indexOf(f.id)>=0}).length:0;
+  var body='<div class="group">'+frow('Nome',txt('cf-nome',f&&f.nome,'es. Concime in pallet','autocapitalize="sentences"'))+frow('Tipo',txt('cf-tipo',f&&f.tipo,'organico, liquido, NPK…'))+frow('Dose indicativa',txt('cf-dose',f&&f.dose,'es. 1 pallina / 30 giorni'))+'</div>'
+    +'<div class="lbl">Note</div><div class="group">'+textarea('cf-note',f&&f.note,'Periodi, avvertenze, cosa evitare',3)+'</div>'
+    +(f?'<p class="foot">Usato da '+n+' '+plural(n,'pianta','piante')+'. Se lo elimini, viene tolto dalle piante; lo storico conserva il nome.</p><div class="stack"><button class="btn danger" data-act="fert-del" data-id="'+f.id+'" data-confirm="Elimina concime">Elimina concime</button></div>':'');
+  openSheet({title:f?'Modifica concime':'Nuovo concime',body:body,onSave:function(){
+    var nome=val('cf-nome').trim();if(!nome){$('#cf-nome').focus();return false}
+    var o={nome:nome,tipo:val('cf-tipo').trim(),dose:val('cf-dose').trim(),note:val('cf-note').trim()};
+    if(f)Object.assign(f,o);else S.ferts.push(Object.assign({id:uid()},o));
+    persist();render(true);
+  }});
+}
+function histSheet(pid,id){
+  var h=id?S.history.find(function(x){return x.id===id}):null;
+  var body=tipiList()+'<div class="group">'+frow('Intervento',txt('hf-tipo',h&&h.tipo,'es. Potatura','list="tipi" autocapitalize="sentences"'))
+    +frow('Data','<input class="txt" type="date" id="hf-date" value="'+(h?h.date:today())+'">')+fertSel('hf-fert',h&&h.fertId)+'</div>'
+    +'<div class="lbl">Note</div><div class="group">'+textarea('hf-note',h&&h.note,'Dettagli dell\'intervento',3)+'</div>'
+    +(h?'<div class="stack"><button class="btn danger" data-act="hist-del" data-id="'+h.id+'" data-confirm="Elimina dallo storico">Elimina dallo storico</button></div>':'');
+  openSheet({title:h?'Modifica intervento':'Nuovo intervento',body:body,onSave:function(){
+    var tipo=val('hf-tipo').trim(),date=val('hf-date');
+    if(!tipo){$('#hf-tipo').focus();return false}if(!date){$('#hf-date').focus();return false}
+    var fid=val('hf-fert'),o={tipo:tipo,date:date,note:val('hf-note').trim(),fertId:fid,fertName:fid&&fertById(fid)?fertById(fid).nome:''};
+    if(h)Object.assign(h,o);else S.history.push(Object.assign({id:uid(),plantId:pid},o));
+    persist();render(true);
+  }});
+}
+function futSheet(pid,id){
+  var f=id?S.future.find(function(x){return x.id===id}):null,rep=!!(f&&f.ogni>0);
+  var body=tipiList()+'<div class="group">'+frow('Intervento',txt('ff-tipo',f&&f.tipo,'es. Concimazione','list="tipi" autocapitalize="sentences"'))
+    +frow('Data prevista','<input class="txt" type="date" id="ff-date" value="'+(f?f.date:today())+'">')+fertSel('ff-fert',f&&f.fertId)+'</div>'
+    +'<div class="group gap"><label class="frow"><span class="grow">Ripeti</span><input type="checkbox" class="switch" id="ff-rep"'+(rep?' checked':'')+'></label>'
+    +'<label class="frow" id="ff-ogni-row"'+(rep?'':' hidden')+'><span>Ogni</span><input class="txt" type="number" inputmode="numeric" min="1" max="3650" id="ff-ogni" value="'+(rep?f.ogni:'')+'" placeholder="numero"><span class="unit">giorni</span></label>'
+    +'<label class="frow" id="ff-pause-row"'+(rep?'':' hidden')+'><span class="grow">In pausa</span><input type="checkbox" class="switch" id="ff-pause"'+(f&&f.paused?' checked':'')+'></label></div>'
+    +'<p class="foot">Quando segni l\'intervento come fatto, il successivo si calcola dalla data in cui l\'hai fatto davvero. In pausa, la ricorrenza resta salvata ma non compare in Da fare.</p>'
+    +(f?'<div class="stack"><button class="btn danger" data-act="fut-del" data-id="'+f.id+'" data-confirm="Elimina intervento">Elimina intervento</button></div>':'');
+  openSheet({title:f?'Modifica intervento':'Nuovo intervento',body:body,onSave:function(){
+    var tipo=val('ff-tipo').trim(),date=val('ff-date');
+    if(!tipo){$('#ff-tipo').focus();return false}if(!date){$('#ff-date').focus();return false}
+    var r=$('#ff-rep').checked,ogni=r?parseInt(val('ff-ogni'),10):0;
+    if(r&&!(ogni>=1&&ogni<=3650)){$('#ff-ogni').focus();return false}
+    var paused=r&&$('#ff-pause').checked,d=date;
+    if(f&&f.paused&&!paused&&d<today())d=today();
+    var o={tipo:tipo,date:d,ogni:ogni||0,paused:paused,fertId:val('ff-fert')};
+    if(f)Object.assign(f,o);else S.future.push(Object.assign({id:uid(),plantId:pid},o));
+    persist();render(true);
+  }});
+}
+function doneSheet(id){
+  var f=S.future.find(function(x){return x.id===id});if(!f)return;
+  var p=plantById(f.plantId);
+  var body='<div class="group">'+frow('Intervento','<span class="txt" style="line-height:44px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.tipo)+'</span>')
+    +frow('Fatto il','<input class="txt" type="date" id="df-date" value="'+today()+'">')+fertSel('df-fert',f.fertId)+'</div>'
+    +'<div class="lbl">Note</div><div class="group">'+textarea('df-note','','Note facoltative',3)+'</div>'
+    +'<p class="foot">'+(f.ogni?'È un intervento ricorrente: il prossimo sarà fissato a '+f.ogni+' '+plural(f.ogni,'giorno','giorni')+' dalla data indicata.':'L\'intervento passa nello storico e viene tolto da quelli in programma.')+'</p>';
+  openSheet({title:p?p.nome:'Fatto',saveLabel:'Fatto',body:body,onSave:function(){
+    var date=val('df-date');if(!date){$('#df-date').focus();return false}
+    var fid=val('df-fert');
+    S.history.push({id:uid(),plantId:f.plantId,tipo:f.tipo,date:date,note:val('df-note').trim(),fertId:fid,fertName:fid&&fertById(fid)?fertById(fid).nome:''});
+    var msg;
+    if(f.ogni>0&&!f.paused){f.date=addDays(date,f.ogni);msg='Registrato. Prossimo: '+fmt(f.date,true)}
+    else{S.future=S.future.filter(function(x){return x!==f});msg='Registrato nello storico'}
+    persist();render(true);toast(msg);
+  }});
+}
+function photoSheet(pid,gid){
+  var p=plantById(pid),g=p&&p.gallery.find(function(x){return x.id===gid});if(!g)return;
+  var body='<button class="photo-big" data-act="lb" data-photo="'+g.photo+'" aria-label="Apri la foto"><img src="'+(thumbs.get(g.photo)||'')+'" data-full="'+g.photo+'" alt=""></button>'
+    +'<div class="group">'+frow('Data','<input class="txt" type="date" id="gp-date" value="'+g.date+'">')+textarea('gp-note',g.note,'Nota breve (facoltativa)',3)+'</div>'
+    +'<div class="stack"><button class="btn plain" data-act="gp-main" data-pid="'+pid+'" data-gid="'+gid+'">Usa come foto principale</button><button class="btn danger" data-act="gp-del" data-pid="'+pid+'" data-gid="'+gid+'" data-confirm="Elimina foto">Elimina foto</button></div>';
+  openSheet({title:'Foto',saveLabel:'Fine',cancel:'Chiudi',body:body,onSave:function(){
+    g.date=val('gp-date')||g.date;g.note=val('gp-note').trim();persist();render(true);
+  }});
+  $$('#sheetRoot img[data-full]').forEach(function(img){fullOf(img.dataset.full).then(function(src){if(src&&img.isConnected)img.src=src})});
+}
+
+/* ---------- lightbox ---------- */
+function openLb(id){
+  var lb=$('#lb');lb.innerHTML='<button class="lb-x" aria-label="Chiudi">'+I.x+'</button><img src="'+(thumbs.get(id)||'')+'" alt="">';
+  lb.hidden=false;document.documentElement.classList.add('lock');
+  fullOf(id).then(function(src){if(src&&!lb.hidden)lb.querySelector('img').src=src});
+}
+function closeLb(){var lb=$('#lb');lb.hidden=true;lb.innerHTML='';if(!sheetState)document.documentElement.classList.remove('lock')}
+
+/* ---------- backup ---------- */
+function markBackup(){try{localStorage.setItem(LB,new Date().toISOString())}catch(e){}if(route().name==='dati')render(true)}
+function download(blob,name){
+  var u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(u)},4000);
+}
+function buildBackup(){
+  return Promise.all([allEntries('full'),allEntries('thumbs')]).then(function(r){
+    var tm=new Map(r[1]);
+    return {app:'bonsai-manager',version:1,exportedAt:new Date().toISOString(),data:S,
+      photos:r[0].map(function(e){return {id:e[0],full:e[1],thumb:tm.get(e[0])}})};
+  });
+}
+function exportBackup(mode){
+  toast('Preparo il backup…');
+  buildBackup().then(function(o){
+    var name='bonsai-backup-'+today()+'.json',blob=new Blob([JSON.stringify(o)],{type:'application/json'});
+    if(mode==='share'&&navigator.canShare){
+      var file=new File([blob],name,{type:'application/json'});
+      if(navigator.canShare({files:[file]})){
+        return navigator.share({files:[file],title:'Backup bonsai'}).then(function(){markBackup()},function(e){
+          if(e&&e.name==='AbortError')return;download(blob,name);markBackup();
+        });
+      }
+    }
+    download(blob,name);markBackup();toast('Backup scaricato');
+  }).catch(function(){toast('Backup non riuscito')});
+}
+function readImport(file){
+  file.text().then(function(t){
+    var o;try{o=JSON.parse(t)}catch(e){toast('File non valido');return}
+    if(!o||o.app!=='bonsai-manager'||!o.data||!Array.isArray(o.data.plants)){toast('Questo non è un backup di questa app');return}
+    var d=o.data,np=(d.plants||[]).length,nf=(o.photos||[]).length;
+    var body='<div class="group"><div class="row sumrow"><span>File</span><span class="r" style="overflow:hidden;text-overflow:ellipsis">'+esc(file.name)+'</span></div>'
+      +(o.exportedAt?'<div class="row sumrow"><span>Creato il</span><span class="r">'+fmt(ymd(new Date(o.exportedAt)),true)+'</span></div>':'')
+      +'<div class="row sumrow"><span>Piante</span><span class="r">'+np+'</span></div><div class="row sumrow"><span>Foto</span><span class="r">'+nf+'</span></div>'
+      +'<div class="row sumrow"><span>Concimi</span><span class="r">'+(d.ferts||[]).length+'</span></div><div class="row sumrow"><span>Interventi registrati</span><span class="r">'+(d.history||[]).length+'</span></div></div>'
+      +'<p class="foot red">I dati attuali di questo dispositivo verranno sostituiti. Se non hai un backup recente, annulla ed esportalo prima.</p>'
+      +'<div class="stack"><button class="btn" id="imp-go">Sostituisci con questo backup</button></div>';
+    openSheet({title:'Importa backup',body:body});
+    $('#imp-go').addEventListener('click',function(){applyImport(o)});
+  }).catch(function(){toast('Non riesco a leggere il file')});
+}
+function applyImport(o){
+  toast('Importo…');
+  clearPhotos().then(function(){
+    thumbs.clear();
+    var ps=(o.photos||[]).filter(function(p){return p&&p.id&&p.full});
+    return ps.reduce(function(chain,p){return chain.then(function(){var th=p.thumb||p.full;thumbs.set(p.id,th);return putPhoto(p.id,p.full,th)})},Promise.resolve());
+  }).then(function(){
+    var d=o.data;S={plants:d.plants||[],ferts:d.ferts||[],history:d.history||[],future:d.future||[]};norm();
+    persist();closeSheet();render(false);toast('Backup importato');
+  }).catch(function(){toast('Importazione non riuscita')});
+}
+
+/* ---------- azioni ---------- */
+function deletePlant(id){
+  S.plants=S.plants.filter(function(p){return p.id!==id});
+  S.history=S.history.filter(function(h){return h.plantId!==id});
+  S.future=S.future.filter(function(f){return f.plantId!==id});
+  persist();gc();
+  if(navigated)history.back();else location.hash='#/piante';
+}
+var A={
+  'back':function(){if(navigated)history.back();else location.hash='#/piante'},
+  'plant-new':function(){plantSheet()},
+  'plant-edit':function(el){plantSheet(el.dataset.id)},
+  'plant-del':function(el){deletePlant(el.dataset.id)},
+  'pf-photo':function(){$('#fileMain').click()},
+  'pf-photo-rm':function(){if(pick&&pick.st){pick.st.photo=null;$('#pf-prev').innerHTML=I.leaf}},
+  'fert-new':function(){fertSheet()},
+  'fert-edit':function(el){fertSheet(el.dataset.id)},
+  'fert-del':function(el){
+    var id=el.dataset.id;S.ferts=S.ferts.filter(function(f){return f.id!==id});
+    S.plants.forEach(function(p){p.ferts=p.ferts.filter(function(x){return x!==id});delete p.dosi[id]});
+    S.future.forEach(function(f){if(f.fertId===id)f.fertId=''});
+    persist();closeSheet();render(true);
+  },
+  'hist-add':function(el){histSheet(el.dataset.id)},
+  'hist-edit':function(el){var h=S.history.find(function(x){return x.id===el.dataset.id});if(h)histSheet(h.plantId,h.id)},
+  'hist-del':function(el){S.history=S.history.filter(function(h){return h.id!==el.dataset.id});persist();closeSheet();render(true)},
+  'hist-all':function(el){showAll[el.dataset.id]=!showAll[el.dataset.id];render(true)},
+  'fut-add':function(el){futSheet(el.dataset.id)},
+  'fut-edit':function(el){var f=S.future.find(function(x){return x.id===el.dataset.id});if(f)futSheet(f.plantId,f.id)},
+  'fut-del':function(el){S.future=S.future.filter(function(f){return f.id!==el.dataset.id});persist();closeSheet();render(true)},
+  'fut-done':function(el){doneSheet(el.dataset.id)},
+  'fut-resume':function(el){var f=S.future.find(function(x){return x.id===el.dataset.id});if(!f)return;f.paused=false;if(f.date<today())f.date=today();persist();render(true);toast('Ricorrenza ripresa')},
+  'photo-add':function(el){pick={kind:'gal',pid:el.dataset.id};$('#fileGal').click()},
+  'photo-open':function(el){photoSheet(el.dataset.id,el.dataset.gid)},
+  'gp-main':function(el){var p=plantById(el.dataset.pid),g=p&&p.gallery.find(function(x){return x.id===el.dataset.gid});if(!g)return;p.photo=g.photo;persist();closeSheet();render(true);toast('Foto principale aggiornata')},
+  'gp-del':function(el){var p=plantById(el.dataset.pid);if(!p)return;p.gallery=p.gallery.filter(function(x){return x.id!==el.dataset.gid});persist();gc();closeSheet();render(true)},
+  'lb':function(el){openLb(el.dataset.photo)},
+  'lb-close':function(){closeLb()},
+  'sheet-cancel':function(){closeSheet(true)},
+  'sheet-save':function(){
+    var st=sheetState;if(!st||!st.onSave)return;
+    Promise.resolve(st.onSave()).then(function(r){if(r!==false)closeSheet()});
+  },
+  'export-share':function(){exportBackup('share')},
+  'export-file':function(){exportBackup('file')},
+  'import-pick':function(){$('#fileImp').click()}
+};
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-act],[data-go]');if(!el)return;
+  if(el.dataset.go){location.hash=el.dataset.go;return}
+  var act=el.dataset.act;
+  if(act==='lb-close'&&e.target.closest('#lb')===null)return;
+  if(el.dataset.confirm&&!el.dataset.armed){
+    el.dataset.armed='1';var old=el.textContent;el.textContent='Tocca di nuovo per confermare';
+    setTimeout(function(){if(el.isConnected){delete el.dataset.armed;el.textContent=old}},3500);return;
+  }
+  if(A[act])A[act](el);
+});
+document.addEventListener('change',function(e){
+  var t=e.target;
+  if(t.classList&&t.classList.contains('chk')){var qr=document.getElementById('pq-row-'+t.value);if(qr)qr.hidden=!t.checked}
+  if(t.id==='ff-rep'){$('#ff-ogni-row').hidden=!t.checked;$('#ff-pause-row').hidden=!t.checked;if(!t.checked)$('#ff-pause').checked=false}
+});
+document.addEventListener('input',function(e){
+  if(e.target.id!=='q')return;
+  var q=e.target.value.trim().toLowerCase();
+  $$('#plist .row').forEach(function(r){r.hidden=q&&r.dataset.q.indexOf(q)<0});
+});
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Escape')return;
+  if(!$('#lb').hidden)closeLb();else if(sheetState)closeSheet(true);
+});
+$('#fileMain').addEventListener('change',function(e){
+  var f=e.target.files&&e.target.files[0];e.target.value='';
+  if(!f||!pick||pick.kind!=='main')return;
+  var st=pick.st;
+  addPhotoFile(f).then(function(id){st.photo=id;var pv=$('#pf-prev');if(pv)pv.innerHTML=thumbHtml(id)}).catch(function(){toast('Non riesco a salvare questa foto')});
+});
+$('#fileGal').addEventListener('change',function(e){
+  var files=Array.prototype.slice.call(e.target.files||[]);e.target.value='';
+  var p=pick&&pick.kind==='gal'&&plantById(pick.pid);if(!p||!files.length)return;
+  toast('Salvo le foto…');
+  var n=0;
+  files.reduce(function(chain,f){return chain.then(function(){return addPhotoFile(f).then(function(id){p.gallery.push({id:uid(),photo:id,date:today(),note:''});n++}).catch(function(){})})},Promise.resolve())
+  .then(function(){persist();render(true);toast(n?n+' '+plural(n,'foto aggiunta','foto aggiunte'):'Nessuna foto salvata')});
+});
+$('#fileImp').addEventListener('change',function(e){
+  var f=e.target.files&&e.target.files[0];e.target.value='';if(f)readImport(f);
+});
+
+/* ---------- avvio ---------- */
+load();
+(function(){
+  var done=function(){
+    if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});
+    render(false);
+  };
+  var p;try{p=allEntries('thumbs')}catch(e){p=Promise.reject(e)}
+  p.then(function(es){es.forEach(function(e){thumbs.set(e[0],e[1])})}).catch(function(){}).then(done);
+})();
+})();
+</script>
+<script>
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "Bonsai",
+  "short_name": "Bonsai",
+  "description": "Schede pianta, concimi, interventi e foto dei tuoi bonsai.",
+  "lang": "it",
+  "start_url": "bonsai.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F2F2F7",
+  "theme_color": "#F2F2F7",
+  "icons": [
+    {"src": "bonsai-icon.png", "sizes": "180x180", "type": "image/png"}
+  ]
+}

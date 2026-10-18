@@ -161,7 +161,7 @@
       '<div class="r" id="lma-go-row" hidden><button class="b p" id="lma-go" type="button">Ripristina dal testo</button></div>' +
       '<div id="lma-msg" role="status"></div>' +
       '<h3>Le tue app</h3>' +
-      '<div class="app"><a href="' + base + '">Esami</a><a href="' + base + 'piano-studio.html">Piano studio</a><a href="' + base + 'conti/">Conti</a><a href="' + base + 'home/">Home</a></div>' +
+      '<div class="app"><a href="' + base + '">Esami</a><a href="' + base + 'piano-studio.html">Piano studio</a><a href="' + base + 'conti/">Conti</a><a href="' + base + 'bonsai.html">Bonsai</a><a href="' + base + 'home/">Home</a></div>' +
       '<div class="r"><button class="b" id="lma-close" type="button">Chiudi</button></div>' +
     '</div>';
 
