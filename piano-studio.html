@@ -8,15 +8,15 @@
 <meta name="apple-mobile-web-app-title" content="Piano studio">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#F4F6FA">
+<link rel="manifest" href="piano-studio.webmanifest">
 <link rel="apple-touch-icon" href="piano-studio-icon.png">
 <link rel="icon" href="piano-studio-icon.png">
 <title>Piano studio</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap">
 <style>
-:root{--bg:#F4F6FA;--ink:#1B2433;--mut:#566073;--line:#E3E7EF;--soft:#EBEEF4;--disp:'Bricolage Grotesque','DM Sans',system-ui,sans-serif}
+:root{--bg:#F4F6FA;--ink:#1B2433;--mut:#566073;--line:#E3E7EF;--soft:#EBEEF4;--disp:ui-rounded,'SF Pro Rounded',-apple-system,system-ui,sans-serif}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,-apple-system,sans-serif;line-height:1.4}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,system-ui,'Segoe UI',sans-serif;line-height:1.4}
 body.lock{overflow:hidden}
 button,input,textarea{font:inherit;color:inherit}
 :focus-visible{outline:3px solid #6B8CFF;outline-offset:2px}
@@ -359,13 +359,56 @@ function totals() {
   return { n: n, d: d, todo: n - d, pct: n ? Math.round(d / n * 100) : 0 };
 }
 
+/* ---------- ritmo verso la scadenza ---------- */
+
+function giorniA(dateStr) {
+  var p = dateStr.split('-'), d = new Date(+p[0], +p[1] - 1, +p[2]), t = new Date();
+  t.setHours(0, 0, 0, 0);
+  return Math.round((d - t) / 864e5);
+}
+
+function restante(books) {
+  var n = 0, pg = 0;
+  books.forEach(function (b) {
+    b.chapters.forEach(function (c) {
+      c.sessions.forEach(function (x) { if (!x.done) { n++; pg += x.to - x.from + 1; } });
+    });
+  });
+  return { n: n, pg: pg };
+}
+
+function ritmoTesto(r, dl) {
+  if (!r.n) return 'Tutto completato.';
+  var g = giorniA(dl);
+  if (g < 0) return 'Scadenza passata da ' + (-g) + (g === -1 ? ' giorno' : ' giorni') + ': restano ' + r.n + ' sessioni (' + r.pg + ' pagine).';
+  if (g === 0) return 'Scadenza oggi: restano ' + r.n + ' sessioni (' + r.pg + ' pagine).';
+  var pgg = Math.ceil(r.pg / g), sg = Math.round(r.n / g * 10) / 10;
+  return 'Mancano ' + g + (g === 1 ? ' giorno' : ' giorni') + ': servono circa ' + pgg + ' pagine al giorno (' + (sg === 1 ? '1 sessione' : String(sg).replace('.', ',') + ' sessioni') + ').';
+}
+
+function prossimoEsame() {
+  try {
+    var o = JSON.parse(localStorage.getItem('pianificatore-esami-v1') || '{}'), best = null;
+    Object.keys(o).forEach(function (k) {
+      if (!o[k] || o[k].type !== 'exam') return;
+      var p = k.split('-').map(Number);
+      if (p.length !== 3 || p.some(isNaN)) return;
+      var g = giorniA(p[0] + '-' + (p[1] + 1) + '-' + p[2]);
+      if (g >= 0 && (!best || g < best.g)) best = { g: g, nome: o[k].examName || 'Esame' };
+    });
+    return best;
+  } catch (e) { return null; }
+}
+
 /* ---------- viste ---------- */
+
 
 function bookCard(b) {
   var st = bookStats(b), col = b.color, open = !ui.collapsed[b.id], bid = esc(b.id);
   var h = '<section class="card">';
   h += '<div class="bh"><div><h2 style="color:' + col + '">' + esc(b.name) + '</h2><div class="mut">' + st.n + ' sessioni · ' + st.p + ' pagine</div></div>';
   h += '<div class="bp"><div class="pct" style="color:' + col + '">' + st.pct + '%</div><div class="mut">' + st.d + ' di ' + st.n + ' fatte</div></div></div>';
+  if (b.deadline) h += '<div class="mut" style="margin-top:8px">' + esc(ritmoTesto(restante([b]), b.deadline)) + '</div>';
   h += '<div class="segs" aria-hidden="true">';
   b.chapters.forEach(function (c) {
     c.sessions.forEach(function (s) {
@@ -413,6 +456,13 @@ function viewPiano() {
     '<div class="stat"><div class="l">Da fare</div><div class="v">' + T.todo + '</div></div>' +
     '<div class="stat"><div class="l">Completato</div><div class="v">' + T.pct + '%</div></div></div>';
   h += '<div class="bar" role="progressbar" aria-label="Completamento totale" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + T.pct + '"><i style="width:' + T.pct + '%"></i></div>';
+  if (state.books.length && (state.deadline || prossimoEsame())) {
+    h += '<section class="card" style="padding:14px 16px"><div class="eyebrow">Ritmo</div>';
+    if (state.deadline) h += '<p style="margin-top:4px">' + esc(ritmoTesto(restante(state.books), state.deadline)) + '</p>';
+    var pe = prossimoEsame();
+    if (pe) h += '<p class="mut" style="margin-top:4px">Prossimo esame nel Pianificatore: ' + esc(pe.nome) + (pe.g === 0 ? ', oggi.' : pe.g === 1 ? ', domani.' : ', tra ' + pe.g + ' giorni.') + '</p>';
+    h += '</section>';
+  }
   state.books.forEach(function (b) { h += bookCard(b); });
   if (!state.books.length) {
     h += '<div class="empty">Nessun libro. Vai su Importa per caricare il testo che ti preparo, oppure premi Modifica e aggiungi un libro a mano.</div>';
@@ -721,6 +771,14 @@ else { applyParsed(parseText(SEED), 'replace'); save(); }
 render();
 
 })();
+</script>
+<script src="backup.js" data-base="./"></script>
+<script>
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  });
+}
 </script>
 </body>
 </html>

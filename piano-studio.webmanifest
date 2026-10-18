@@ -1,0 +1,15 @@
+{
+  "name": "Piano studio",
+  "short_name": "Piano studio",
+  "description": "Capitoli, sessioni di studio e progressi fino alla scadenza.",
+  "lang": "it",
+  "start_url": "piano-studio.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4F6FA",
+  "theme_color": "#F4F6FA",
+  "icons": [
+    {"src": "piano-studio-icon.png", "sizes": "180x180", "type": "image/png"}
+  ]
+}

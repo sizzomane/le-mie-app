@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Le mie app</title>
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Le mie app">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<link rel="icon" href="../icon-192.png">
+<style>
+:root{--bg:#f2f2f7;--card:#fff;--tx:#1c1c1e;--sub:#6b6b70;--sep:#e2e2e7}
+@media (prefers-color-scheme:dark){:root{--bg:#000;--card:#1c1c1e;--tx:#f2f2f7;--sub:#9a9aa1;--sep:#38383a}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;-webkit-text-size-adjust:100%}
+main{max-width:560px;margin:0 auto;padding:calc(24px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom))}
+h1{font-size:34px;margin:8px 4px 4px;letter-spacing:.2px}
+.sub{margin:0 4px 20px;color:var(--sub);font-size:15px}
+a.card{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--sep);border-radius:18px;padding:14px 16px;margin-bottom:12px;color:inherit;text-decoration:none}
+a.card:active{opacity:.7}
+.ic{flex:none;width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px}
+.t{font-size:17px;font-weight:600}
+.d{font-size:14px;color:var(--sub);margin-top:2px}
+.chev{margin-left:auto;color:var(--sub);font-size:20px}
+.note{margin:18px 4px 0;font-size:13px;color:var(--sub)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Le mie app</h1>
+  <p class="sub">Funzionano anche senza rete. I dati restano su questo telefono.</p>
+  <a class="card" href="../">
+    <div class="ic" style="background:#6f8fc9">📅</div>
+    <div><div class="t">Esami</div><div class="d">Calendario, progressi, oggi e Pomodoro</div></div><div class="chev">›</div>
+  </a>
+  <a class="card" href="../piano-studio.html">
+    <div class="ic" style="background:#2f5da8">📚</div>
+    <div><div class="t">Piano studio</div><div class="d">Capitoli, sessioni e ritmo verso la scadenza</div></div><div class="chev">›</div>
+  </a>
+  <a class="card" href="../conti/">
+    <div class="ic" style="background:#b5502f">🧾</div>
+    <div><div class="t">Divisore conti</div><div class="d">Dividi lo scontrino, anche da foto</div></div><div class="chev">›</div>
+  </a>
+  <p class="note">In ogni app, il pulsante in alto a destra apre il backup: un solo file salva e ripristina i dati di tutte e tre.</p>
+</main>
+<script>
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("../sw.js").catch(function () {});
+  });
+}
+</script>
+</body>
+</html>
