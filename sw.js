@@ -1,4 +1,4 @@
-const CACHE = "pianificatore-esami-v5";
+const CACHE = "pianificatore-esami-v6";
 const FILES = ["./", "index.html", "app.js", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png",
   "backup.js", "piano-studio.html", "piano-studio.webmanifest", "piano-studio-icon.png", "home/index.html",
   "bonsai.html", "bonsai.webmanifest", "bonsai-icon.png"];
