@@ -92,6 +92,7 @@ pre{margin:12px 0 0;background:var(--bg);border:1px solid var(--line);border-rad
 <main class="wrap" id="app"></main>
 <nav class="tabs" aria-label="Sezioni">
 <button class="tab" data-act="tab" data-view="piano"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Piano</button>
+<button class="tab" data-act="tab" data-view="completati"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg><span>Completati<span id="doneCount"></span></span></button>
 <button class="tab" data-act="tab" data-view="importa"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3h16v-3"/></svg>Importa</button>
 </nav>
 <div class="ov" id="ov" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"></div></div>
@@ -353,6 +354,10 @@ function bookStats(b) {
   return { n: n, d: d, p: p, pct: n ? Math.round(d / n * 100) : 0 };
 }
 
+// Un libro è completato quando ha almeno una sessione e tutte sono fatte.
+function isDone(b) { var s = bookStats(b); return s.n > 0 && s.d === s.n; }
+function group(done) { return state.books.filter(function (b) { return isDone(b) === done; }); }
+
 function totals() {
   var n = 0, d = 0;
   state.books.forEach(function (b) { var s = bookStats(b); n += s.n; d += s.d; });
@@ -468,11 +473,27 @@ function viewPiano() {
     if (pe) h += '<p class="mut" style="margin-top:4px">Prossimo esame nel Pianificatore: ' + esc(pe.nome) + (pe.g === 0 ? ', oggi.' : pe.g === 1 ? ', domani.' : ', tra ' + pe.g + ' giorni.') + '</p>';
     h += '</section>';
   }
-  state.books.forEach(function (b, i) { h += bookCard(b, i, state.books.length); });
+  var todo = group(false);
+  todo.forEach(function (b, i) { h += bookCard(b, i, todo.length); });
   if (!state.books.length) {
     h += '<div class="empty">Nessun libro. Vai su Importa per caricare il testo che ti preparo, oppure premi Modifica e aggiungi un libro a mano.</div>';
+  } else if (!todo.length) {
+    h += '<div class="empty">Tutti i libri sono completati. Li trovi nella scheda Completati.</div>';
   }
   if (ui.edit) h += '<button class="btn dashed" data-act="addBook">+ Nuovo libro</button>';
+  return h;
+}
+
+function viewCompleted() {
+  var done = group(true);
+  var h = '<header class="head"><div class="eyebrow">' + done.length + (done.length === 1 ? ' libro finito' : ' libri finiti') + '</div><div class="row"><h1>Completati</h1>' +
+    '<button class="btn" data-act="edit" aria-pressed="' + (ui.edit ? 'true' : 'false') + '">' + (ui.edit ? 'Fine' : 'Modifica') + '</button></div></header>';
+  done.forEach(function (b, i) { h += bookCard(b, i, done.length); });
+  if (!done.length) {
+    h += '<div class="empty">Nessun libro completato. Quando segni come fatte tutte le sessioni di un libro, passa qui.</div>';
+  } else {
+    h += '<p class="mut" style="margin-top:16px">Se togli la spunta a una sessione, il libro torna in Piano.</p>';
+  }
   return h;
 }
 
@@ -525,7 +546,9 @@ function viewImport() {
 
 function render(keepScroll) {
   var y = window.scrollY;
-  $('app').innerHTML = ui.view === 'piano' ? viewPiano() : viewImport();
+  var nDone = group(true).length;
+  $('doneCount').textContent = nDone ? ' (' + nDone + ')' : '';
+  $('app').innerHTML = ui.view === 'piano' ? viewPiano() : ui.view === 'completati' ? viewCompleted() : viewImport();
   var tabs = document.querySelectorAll('.tab');
   for (var i = 0; i < tabs.length; i++) {
     tabs[i].setAttribute('aria-current', tabs[i].getAttribute('data-view') === ui.view ? 'page' : 'false');
@@ -689,15 +712,25 @@ document.addEventListener('click', function (ev) {
     case 'edit': ui.edit = !ui.edit; render(); break;
     case 'toggle':
       var s = c && c.sessions[parseInt(t.getAttribute('data-i'), 10)];
-      if (s) { s.done = !s.done; save(); render(); }
+      if (s) {
+        var was = isDone(b);
+        s.done = !s.done;
+        save();
+        var now = isDone(b);
+        render();
+        if (!was && now) toast('«' + b.name + '» completato: lo trovi in Completati');
+        else if (was && !now) toast('«' + b.name + '» è tornato in Piano');
+      }
       break;
     case 'collapse': if (b) { ui.opened[b.id] = !ui.opened[b.id]; render(); } break;
     case 'moveBook':
       if (b) {
-        var from = state.books.indexOf(b), to = from + parseInt(t.getAttribute('data-dir'), 10);
-        if (to >= 0 && to < state.books.length) {
-          state.books.splice(from, 1);
-          state.books.splice(to, 0, b);
+        // Si sposta solo tra i libri dello stesso gruppo (da fare o completati).
+        var grp = group(isDone(b)), gi = grp.indexOf(b), nb = grp[gi + parseInt(t.getAttribute('data-dir'), 10)];
+        if (nb) {
+          var i1 = state.books.indexOf(b), i2 = state.books.indexOf(nb);
+          state.books[i1] = nb;
+          state.books[i2] = b;
           save();
           render();
           try {
