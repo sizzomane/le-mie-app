@@ -373,9 +373,10 @@ function bookStats(b) {
 function isDone(b) { var s = bookStats(b); return s.n > 0 && s.d === s.n; }
 function group(done) { return state.books.filter(function (b) { return isDone(b) === done; }); }
 
-function totals() {
+// Somma delle statistiche sui libri passati (in Piano: solo quelli da completare).
+function totals(books) {
   var n = 0, d = 0, p = 0, pd = 0;
-  state.books.forEach(function (b) { var s = bookStats(b); n += s.n; d += s.d; p += s.p; pd += s.pd; });
+  books.forEach(function (b) { var s = bookStats(b); n += s.n; d += s.d; p += s.p; pd += s.pd; });
   return { n: n, d: d, todo: n - d, p: p, pd: pd, pct: pctPages(pd, p, n > 0 && d === n) };
 }
 
@@ -472,7 +473,8 @@ function bookCard(b, pos, total) {
 }
 
 function viewPiano() {
-  var T = totals();
+  var todo = group(false);
+  var T = totals(todo);
   var h = '<header class="head"><button class="dl" data-act="editDeadline">' + (state.deadline ? 'Scadenza ' + esc(fmtDate(state.deadline)) : '+ Scadenza generale') + PENCIL + '</button><div class="row"><h1>Piano studio</h1>' +
     '<button class="btn" data-act="edit" aria-pressed="' + (ui.edit ? 'true' : 'false') + '">' + (ui.edit ? 'Fine' : 'Modifica') + '</button></div></header>';
   h += '<div class="stats">' +
@@ -488,7 +490,6 @@ function viewPiano() {
     if (pe) h += '<p class="mut" style="margin-top:4px">Prossimo esame nel Pianificatore: ' + esc(pe.nome) + (pe.g === 0 ? ', oggi.' : pe.g === 1 ? ', domani.' : ', tra ' + pe.g + ' giorni.') + '</p>';
     h += '</section>';
   }
-  var todo = group(false);
   todo.forEach(function (b, i) { h += bookCard(b, i, todo.length); });
   if (!state.books.length) {
     h += '<div class="empty">Nessun libro. Vai su Importa per caricare il testo che ti preparo, oppure premi Modifica e aggiungi un libro a mano.</div>';
