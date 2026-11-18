@@ -346,12 +346,27 @@ function load() {
 
 /* ---------- statistiche ---------- */
 
+// Percentuale sulle pagine delle sessioni fatte. Non arrotonda a 100 finché resta
+// una sessione da fare, né a 0 se almeno una pagina è fatta.
+function pctPages(pd, p, complete) {
+  if (!p) return 0;
+  var v = Math.round(pd / p * 100);
+  if (complete) return 100;
+  if (v >= 100) v = 99;
+  if (v < 1 && pd > 0) v = 1;
+  return v;
+}
+
 function bookStats(b) {
-  var n = 0, d = 0, p = 0;
+  var n = 0, d = 0, p = 0, pd = 0;
   b.chapters.forEach(function (c) {
-    c.sessions.forEach(function (s) { n++; p += s.to - s.from + 1; if (s.done) d++; });
+    c.sessions.forEach(function (s) {
+      var pg = s.to - s.from + 1;
+      n++; p += pg;
+      if (s.done) { d++; pd += pg; }
+    });
   });
-  return { n: n, d: d, p: p, pct: n ? Math.round(d / n * 100) : 0 };
+  return { n: n, d: d, p: p, pd: pd, pct: pctPages(pd, p, n > 0 && d === n) };
 }
 
 // Un libro è completato quando ha almeno una sessione e tutte sono fatte.
@@ -359,9 +374,9 @@ function isDone(b) { var s = bookStats(b); return s.n > 0 && s.d === s.n; }
 function group(done) { return state.books.filter(function (b) { return isDone(b) === done; }); }
 
 function totals() {
-  var n = 0, d = 0;
-  state.books.forEach(function (b) { var s = bookStats(b); n += s.n; d += s.d; });
-  return { n: n, d: d, todo: n - d, pct: n ? Math.round(d / n * 100) : 0 };
+  var n = 0, d = 0, p = 0, pd = 0;
+  state.books.forEach(function (b) { var s = bookStats(b); n += s.n; d += s.d; p += s.p; pd += s.pd; });
+  return { n: n, d: d, todo: n - d, p: p, pd: pd, pct: pctPages(pd, p, n > 0 && d === n) };
 }
 
 /* ---------- ritmo verso la scadenza ---------- */
@@ -415,7 +430,7 @@ function bookCard(b, pos, total) {
   var st = bookStats(b), col = b.color, open = !!ui.opened[b.id], bid = esc(b.id);
   var h = '<section class="card" data-card="' + bid + '">';
   h += '<div class="bh"><div><h2 style="color:' + col + '">' + esc(b.name) + '</h2><div class="mut">' + st.n + ' sessioni · ' + st.p + ' pagine</div></div>';
-  h += '<div class="bp"><div class="pct" style="color:' + col + '">' + st.pct + '%</div><div class="mut">' + st.d + ' di ' + st.n + ' fatte</div></div></div>';
+  h += '<div class="bp"><div class="pct" style="color:' + col + '">' + st.pct + '%</div><div class="mut">' + st.pd + ' di ' + st.p + ' pagine</div><div class="mut">' + st.d + ' di ' + st.n + ' sessioni</div></div></div>';
   if (b.deadline) h += '<div class="mut" style="margin-top:8px">' + esc(ritmoTesto(restante([b]), b.deadline)) + '</div>';
   h += '<div class="segs" aria-hidden="true">';
   b.chapters.forEach(function (c) {
@@ -464,7 +479,7 @@ function viewPiano() {
     '<div class="stat"><div class="l">Sessioni totali</div><div class="v">' + T.n + '</div></div>' +
     '<div class="stat"><div class="l">Fatte</div><div class="v">' + T.d + '</div></div>' +
     '<div class="stat"><div class="l">Da fare</div><div class="v">' + T.todo + '</div></div>' +
-    '<div class="stat"><div class="l">Completato</div><div class="v">' + T.pct + '%</div></div></div>';
+    '<div class="stat"><div class="l">Completato (pagine)</div><div class="v">' + T.pct + '%</div></div></div>';
   h += '<div class="bar" role="progressbar" aria-label="Completamento totale" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + T.pct + '"><i style="width:' + T.pct + '%"></i></div>';
   if (state.books.length && (state.deadline || prossimoEsame())) {
     h += '<section class="card" style="padding:14px 16px"><div class="eyebrow">Ritmo</div>';
